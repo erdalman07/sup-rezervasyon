@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SUP Klübü — Admin Paneli</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ocean: #0077b6;
+  --sky: #00b4d8;
+  --dark: #03045e;
+  --light: #f4f8ff;
+  --success: #2cb67d;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --border: #e2eaf4;
+  --text: #1a1a2e;
+  --muted: #6b7280;
+}
+body { font-family: 'Inter', sans-serif; background: var(--light); color: var(--text); min-height: 100vh; display: flex; }
+
+/* ====== SIDEBAR ====== */
+.sidebar {
+  width: 240px; min-height: 100vh;
+  background: linear-gradient(180deg, var(--dark) 0%, var(--ocean) 100%);
+  padding: 0; flex-shrink: 0;
+  position: fixed; left: 0; top: 0; bottom: 0;
+  overflow-y: auto;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  font-size: 15px; font-weight: 700; color: white;
+  display: flex; align-items: center; gap: 10px;
+}
+.sidebar-logo span { font-size: 24px; }
+.sidebar-nav { padding: 16px 0; }
+.nav-section { padding: 8px 20px 4px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.4); letter-spacing: 1px; text-transform: uppercase; }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 20px; color: rgba(255,255,255,0.75); font-size: 14px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; text-decoration: none;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { background: rgba(255,255,255,0.1); color: white; }
+.nav-item.active { background: rgba(255,255,255,0.15); color: white; border-left-color: var(--sky); }
+.nav-item .ni-icon { font-size: 18px; width: 24px; text-align: center; }
+
+/* ====== MAIN ====== */
+.main { margin-left: 240px; flex: 1; min-height: 100vh; }
+
+/* ====== TOPBAR ====== */
+.topbar {
+  background: white; border-bottom: 1px solid var(--border);
+  padding: 16px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-title { font-size: 18px; font-weight: 700; color: var(--dark); }
+.topbar-right { display: flex; gap: 12px; align-items: center; }
+.topbar-badge {
+  background: var(--success); color: white;
+  padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+}
+.btn { padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--ocean); color: white; }
+.btn-primary:hover { background: var(--dark); }
+.btn-success { background: var(--success); color: white; }
+.btn-outline { background: white; border: 2px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--ocean); color: var(--ocean); }
+.btn-danger { background: var(--danger); color: white; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+
+/* ====== PAGE CONTENT ====== */
+.page-content { padding: 28px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ====== STATS CARDS ====== */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+.stat-card {
+  background: white; border-radius: 16px; padding: 20px;
+  border: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.stat-card .sc-icon { font-size: 28px; }
+.stat-card .sc-label { font-size: 12px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-card .sc-val { font-size: 28px; font-weight: 800; color: var(--dark); }
+.stat-card .sc-sub { font-size: 12px; color: var(--muted); }
+.stat-card.blue { border-top: 3px solid var(--ocean); }
+.stat-card.green { border-top: 3px solid var(--success); }
+.stat-card.orange { border-top: 3px solid #f59e0b; }
+.stat-card.purple { border-top: 3px solid #8b5cf6; }
+
+/* ====== CARD ====== */
+.card { background: white; border-radius: 16px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; }
+.card-header { padding: 18px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.card-title { font-size: 15px; font-weight: 700; color: var(--dark); }
+.card-body { padding: 20px; }
+
+/* ====== TABLE ====== */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th { background: var(--light); padding: 10px 14px; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 12px 14px; font-size: 13px; border-bottom: 1px solid #f4f8ff; vertical-align: middle; }
+tr:hover td { background: #fafcff; }
+tr:last-child td { border-bottom: none; }
+
+/* ====== BADGES ====== */
+.badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
+.badge-success { background: #d1fae5; color: #065f46; }
+.badge-warning { background: #fef3c7; color: #92400e; }
+.badge-info { background: #dbeafe; color: #1e40af; }
+.badge-danger { background: #fee2e2; color: #991b1b; }
+
+/* ====== FORM FIELDS ====== */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group.full { grid-column: 1/-1; }
+.form-label { font-size: 13px; font-weight: 600; color: var(--dark); }
+.form-hint { font-size: 11px; color: var(--muted); margin-top: -2px; }
+.form-input, .form-select {
+  padding: 10px 14px; border-radius: 10px; border: 2px solid var(--border);
+  font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s;
+}
+.form-input:focus, .form-select:focus { border-color: var(--ocean); }
+
+/* ====== CAMPAIGN CARDS ====== */
+.campaign-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.campaign-card {
+  background: white; border: 2px solid var(--border); border-radius: 14px; padding: 18px;
+  position: relative;
+}
+.campaign-card.active-camp { border-color: var(--success); }
+.campaign-toggle { position: absolute; top: 16px; right: 16px; }
+
+/* Toggle Switch */
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc; transition: .4s; border-radius: 34px;
+}
+.slider:before {
+  position: absolute; content: ""; height: 18px; width: 18px;
+  left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;
+}
+input:checked + .slider { background-color: var(--success); }
+input:checked + .slider:before { transform: translateX(20px); }
+
+/* ====== LOADING ====== */
+.loading { text-align: center; padding: 40px; color: var(--muted); font-size: 14px; }
+
+/* ====== TOAST ====== */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--dark); color: white;
+  padding: 12px 20px; border-radius: 12px;
+  font-size: 14px; font-weight: 500;
+  z-index: 9999; transform: translateY(100px); opacity: 0;
+  transition: all 0.4s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ====== DEPOSIT TOGGLE ====== */
+.deposit-btn {
+  background: none; border: 1px solid var(--border); border-radius: 6px;
+  padding: 4px 10px; cursor: pointer; font-size: 12px; font-weight: 600;
+  transition: all 0.2s;
+}
+.deposit-btn.paid { background: #d1fae5; border-color: #065f46; color: #065f46; }
+.deposit-btn.unpaid { background: #fef3c7; border-color: #92400e; color: #92400e; }
+
+@media (max-width: 900px) {
+  .sidebar { width: 60px; }
+  .sidebar-logo span:last-child, .nav-item span:not(.ni-icon), .nav-section { display: none; }
+  .main { margin-left: 60px; }
+  .settings-grid, .campaign-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ====== HAMBURGER & MOBILE OVERLAY ====== */
+.hamburger {
+  display: none;
+  background: none; border: none; cursor: pointer;
+  padding: 6px 8px; color: var(--dark); font-size: 22px;
+  line-height: 1; border-radius: 8px; transition: background 0.2s;
+}
+.hamburger:hover { background: var(--light); }
+.mobile-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 150; backdrop-filter: blur(2px);
+}
+.mobile-overlay.show { display: block; }
+
+@media (max-width: 768px) {
+  /* Show hamburger, hide desktop sidebar */
+  .hamburger { display: flex; align-items: center; }
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+    width: 240px !important;
+    z-index: 200;
+  }
+  .sidebar-logo span:last-child, .nav-item span:not(.ni-icon), .nav-section { display: unset !important; }
+  .sidebar.mobile-open { transform: translateX(0); }
+
+  /* Main content fills full width */
+  .main { margin-left: 0 !important; }
+
+  /* Topbar */
+  .topbar { padding: 12px 16px; gap: 8px; }
+  .topbar-title { font-size: 15px; }
+  .topbar-right .btn { display: none; } /* hide "Rezervasyon Sayfası" btn on small screens */
+
+  /* Page content */
+  .page-content { padding: 16px 12px; }
+
+  /* Stats: 2 columns */
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px 12px; }
+  .stat-card .sc-val { font-size: 22px; }
+  .stat-card .sc-icon { font-size: 22px; }
+
+  /* Card header wrap */
+  .card-header { flex-wrap: wrap; gap: 8px; }
+  .card-header > div { flex-wrap: wrap; gap: 6px; }
+
+  /* Search row in rezervasyonlar */
+  #searchInput { width: 100% !important; }
+
+  /* Settings / campaign grid already 1fr at 900px */
+  .settings-grid, .campaign-grid { grid-template-columns: 1fr; }
+
+  /* Kurulum URL + buttons: stack vertically */
+  .kurulum-url-row { flex-direction: column !important; align-items: stretch !important; }
+  .kurulum-url-row .btn { width: 100%; justify-content: center; }
+
+  /* Smaller badge */
+  .topbar-badge { font-size: 11px; padding: 3px 8px; }
+}
+
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat-card .sc-val { font-size: 20px; }
+  .page-content { padding: 10px 8px; }
+  .topbar { padding: 10px 12px; }
+  .topbar-title { font-size: 14px; }
+  .card-body { padding: 14px 12px; }
+  .card-header { padding: 14px 12px; }
+  /* Table font size */
+  td { font-size: 11px; padding: 8px 8px; }
+  th { font-size: 10px; padding: 8px 8px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ====== SIDEBAR ====== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <span>🌊</span>
+    <span>SUP Admin</span>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Ana</div>
+    <a class="nav-item active" onclick="showPage('dashboard')" href="#">
+      <span class="ni-icon">📊</span><span>Dashboard</span>
+    </a>
+    <a class="nav-item" onclick="showPage('rezervasyonlar')" href="#">
+      <span class="ni-icon">📋</span><span>Rezervasyonlar</span>
+    </a>
+    <div class="nav-section">Yönetim</div>
+    <a class="nav-item" onclick="showPage('fiyatlar')" href="#">
+      <span class="ni-icon">💰</span><span>Fiyat & Ayarlar</span>
+    </a>
+    <a class="nav-item" onclick="showPage('kampanyalar')" href="#">
+      <span class="ni-icon">🎯</span><span>Kampanyalar</span>
+    </a>
+    <div class="nav-section">Bağlantı</div>
+    <a class="nav-item" onclick="showPage('kurulum')" href="#">
+      <span class="ni-icon">⚙️</span><span>Kurulum</span>
+    </a>
+    <a class="nav-item" href="rezervasyon.html" target="_blank">
+      <span class="ni-icon">🔗</span><span>Rezervasyon Sayfası</span>
+    </a>
+  </nav>
+</aside>
+
+<!-- ====== MAIN ====== -->
+<main class="main">
+  <div class="topbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Menü">☰</button>
+      <div class="topbar-title" id="page-title">📊 Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-badge" id="status-badge">🟢 Sistem Aktif</span>
+      <a href="rezervasyon.html" target="_blank" class="btn btn-primary">🔗 Rezervasyon Sayfası</a>
+    </div>
+  </div>
+  <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
+
+  <div class="page-content">
+
+    <!-- ====== DASHBOARD ====== -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="sc-icon">📋</div>
+          <div class="sc-label">Toplam Rezervasyon</div>
+          <div class="sc-val" id="stat-total">–</div>
+          <div class="sc-sub">Tüm zamanlar</div>
+        </div>
+        <div class="stat-card green">
+          <div class="sc-icon">✅</div>
+          <div class="sc-label">Kapora Alındı</div>
+          <div class="sc-val" id="stat-paid">–</div>
+          <div class="sc-sub">Onaylanmış</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="sc-icon">⏳</div>
+          <div class="sc-label">Bekleyen</div>
+          <div class="sc-val" id="stat-pending">–</div>
+          <div class="sc-sub">Kapora bekleniyor</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="sc-icon">💰</div>
+          <div class="sc-label">Toplam Gelir</div>
+          <div class="sc-val" id="stat-revenue">–</div>
+          <div class="sc-sub">TL</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Son Rezervasyonlar</div>
+          <button class="btn btn-outline btn-sm" onclick="loadReservations()">🔄 Yenile</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rez. No</th>
+                <th>Ad Soyad</th>
+                <th>Tarih & Saat</th>
+                <th>Aktivite</th>
+                <th>Kişi</th>
+                <th>Toplam</th>
+                <th>Kapora</th>
+                <th>Durum</th>
+              </tr>
+            </thead>
+            <tbody id="recent-tbody">
+              <tr><td colspan="8" class="loading">Yükleniyor...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== REZERVASYONLAR ====== -->
+    <div class="page" id="page-rezervasyonlar">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Tüm Rezervasyonlar</div>
+          <div style="display:flex; gap:10px;">
+            <input type="text" class="form-input" placeholder="🔍 Ara..." id="searchInput" oninput="filterReservations()" style="padding:7px 12px; height:36px;">
+            <button class="btn btn-outline btn-sm" onclick="loadReservations()">🔄 Yenile</button>
+            <button class="btn btn-primary btn-sm" onclick="exportCSV()">📥 CSV İndir</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Rez. No</th>
+                <th>Kayıt</th>
+                <th>Tarih</th>
+                <th>Saat</th>
+                <th>Aktivite</th>
+                <th>Bölge</th>
+                <th>Kişi</th>
+                <th>Ad Soyad</th>
+                <th>Telefon</th>
+                <th>E-Posta</th>
+                <th>Toplam (₺)</th>
+                <th>Kapora (₺)</th>
+                <th>Kapora Durumu</th>
+                <th>Durum</th>
+              </tr>
+            </thead>
+            <tbody id="all-tbody">
+              <tr><td colspan="14" class="loading">Yükleniyor...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== FİYAT & AYARLAR ====== -->
+    <div class="page" id="page-fiyatlar">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💰 Fiyat & Sistem Ayarları</div>
+          <button class="btn btn-primary" onclick="saveSettings()">💾 Kaydet</button>
+        </div>
+        <div class="card-body">
+          <div class="settings-grid">
+
+            <div class="form-group">
+              <label class="form-label">IBAN Numarası</label>
+              <div class="form-hint">Müşterilere gösterilecek IBAN</div>
+              <input type="text" class="form-input" id="s-iban" placeholder="TR00 0000 0000 0000 0000 0000 00">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Hesap Adı</label>
+              <div class="form-hint">IBAN sahibinin adı soyadı</div>
+              <input type="text" class="form-input" id="s-accountName" placeholder="Ad Soyad">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Etkinlik Fiyatı (Kişi Başı ₺)</label>
+              <div class="form-hint">Etkinliğe katılım ücreti</div>
+              <input type="number" class="form-input" id="s-eventPrice" placeholder="500">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Kiralama Fiyatı (Saatlik ₺)</label>
+              <div class="form-hint">Board kiralama saatlik ücreti</div>
+              <input type="number" class="form-input" id="s-rentalPrice" placeholder="300">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Kapora Oranı (%)</label>
+              <div class="form-hint">Kapora yüzdesi (örn: 50 = %50)</div>
+              <input type="number" class="form-input" id="s-depositPercent" placeholder="50" min="1" max="100">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Sefer Başına Max Kişi</label>
+              <div class="form-hint">Bir seferde maksimum rezervasyon</div>
+              <input type="number" class="form-input" id="s-maxPeople" placeholder="10">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Admin E-Posta</label>
+              <div class="form-hint">Bildirimler bu adrese gönderilir</div>
+              <input type="email" class="form-input" id="s-adminEmail" placeholder="ornek@gmail.com">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">WhatsApp Numarası</label>
+              <div class="form-hint">Başında + işareti olmadan (ülke kodu dahil)</div>
+              <input type="text" class="form-input" id="s-whatsapp" placeholder="905302237683">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Kiralama Başlangıç Saati</label>
+              <div class="form-hint">Müsait kiralama saatleri başlangıcı</div>
+              <select class="form-select" id="s-rentalStartHour">
+                <option value="05:00">05:00</option>
+                <option value="06:00">06:00</option>
+                <option value="07:00">07:00</option>
+                <option value="08:00">08:00</option>
+                <option value="09:00">09:00</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Kiralama Bitiş Saati</label>
+              <div class="form-hint">Müsait kiralama saatleri bitişi</div>
+              <select class="form-select" id="s-rentalEndHour">
+                <option value="17:00">17:00</option>
+                <option value="18:00">18:00</option>
+                <option value="19:00" selected>19:00</option>
+                <option value="20:00">20:00</option>
+                <option value="21:00">21:00</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Sezon Durumu</label>
+              <div class="form-hint">Sezon kapalıysa rezervasyon alınmaz</div>
+              <select class="form-select" id="s-seasonActive">
+                <option value="Açık">✅ Açık</option>
+                <option value="Kapalı">🔴 Kapalı</option>
+              </select>
+            </div>
+
+            <div class="form-group full" style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:16px;">
+              <div style="font-size:13px; color:#0369a1; font-weight:600; margin-bottom:8px;">ℹ️ Google Sheets Entegrasyonu</div>
+              <div style="font-size:12px; color:#075985;">
+                Bu ayarları değiştirdikten sonra "Kaydet"e tıklayın. Değişiklikler Google Sheets Admin Paneli'ne otomatik kaydedilir ve rezervasyon sayfasına yansır.
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== KAMPANYALAR ====== -->
+    <div class="page" id="page-kampanyalar">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🎯 İndirim Kampanyaları</div>
+          <button class="btn btn-primary" onclick="saveCampaigns()">💾 Kaydet</button>
+        </div>
+        <div class="card-body">
+          <div class="campaign-grid" id="campaign-grid">
+
+            <div class="campaign-card">
+              <div class="campaign-toggle">
+                <label class="switch"><input type="checkbox" id="c1-active" checked><span class="slider"></span></label>
+              </div>
+              <div style="font-size:20px; margin-bottom:8px;">🏷️</div>
+              <div class="form-group" style="margin-bottom:12px;">
+                <label class="form-label">Kampanya Adı</label>
+                <input type="text" class="form-input" id="c1-name" placeholder="Erken Rezervasyon" value="Erken Rezervasyon">
+              </div>
+              <div class="form-group" style="margin-bottom:12px;">
+                <label class="form-label">İndirim Kodu</label>
+                <input type="text" class="form-input" id="c1-code" placeholder="ERKKEN10" value="SUP10" style="text-transform:uppercase;">
+              </div>
+              <div class="form-group">
+                <label class="form-label">İndirim Oranı (%)</label>
+                <input type="number" class="form-input" id="c1-rate" placeholder="10" value="10" min="1" max="100">
+              </div>
+            </div>
+
+            <div class="campaign-card">
+              <div class="campaign-toggle">
+                <label class="switch"><input type="checkbox" id="c2-active"><span class="slider"></span></label>
+              </div>
+              <div style="font-size:20px; margin-bottom:8px;">☀️</div>
+              <div class="form-group" style="margin-bottom:12px;">
+                <label class="form-label">Kampanya Adı</label>
+                <input type="text" class="form-input" id="c2-name" placeholder="Yaz Kampanyası" value="Yaz Kampanyası">
+              </div>
+              <div class="form-group" style="margin-bottom:12px;">
+                <label class="form-label">İndirim Kodu</label>
+                <input type="text" class="form-input" id="c2-code" placeholder="YAZI20" value="YAZI20" style="text-transform:uppercase;">
+              </div>
+              <div class="form-group">
+                <label class="form-label">İndirim Oranı (%)</label>
+                <input type="number" class="form-input" id="c2-rate" placeholder="20" value="20" min="1" max="100">
+              </div>
+            </div>
+
+          </div>
+
+          <div style="margin-top:16px; padding:14px 16px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; font-size:13px; color:#14532d;">
+            💡 Aktif kampanya kodları rezervasyon sayfasında gösterilir ve müşteri girince fiyata otomatik uygulanır.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== KURULUM ====== -->
+    <div class="page" id="page-kurulum">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">⚙️ Supabase Bağlantısı & Kurulum</div>
+          <button class="btn btn-outline btn-sm" onclick="testConnection()">🔌 Bağlantıyı Test Et</button>
+        </div>
+        <div class="card-body">
+
+          <!-- Supabase Bilgileri -->
+          <div style="background:#f0f7ff; border-radius:12px; padding:20px; border:1px solid #bcd6f5; margin-bottom:24px;">
+            <div style="font-size:14px; font-weight:700; color:var(--dark); margin-bottom:12px;">🗄️ Aktif Supabase Projesi</div>
+            <div style="display:flex; flex-direction:column; gap:8px; font-size:13px;">
+              <div><span style="color:#888; width:120px; display:inline-block;">Proje URL:</span><code style="background:#e8f0fe; padding:2px 8px; border-radius:4px; font-size:12px;">https://abwuifkiufhnfzahoxgv.supabase.co</code></div>
+              <div><span style="color:#888; width:120px; display:inline-block;">Bölge:</span><span>Central EU (Frankfurt) 🇩🇪</span></div>
+              <div><span style="color:#888; width:120px; display:inline-block;">Tablolar:</span><span><code style="background:#e8f0fe; padding:2px 6px; border-radius:4px;">rezervasyonlar</code> · <code style="background:#e8f0fe; padding:2px 6px; border-radius:4px;">ayarlar</code></span></div>
+            </div>
+          </div>
+
+          <div style="background:#f8faff; border-radius:16px; padding:24px; border:1px solid var(--border);">
+            <div style="font-size:15px; font-weight:700; color:var(--dark); margin-bottom:20px;">📋 Kurulum Adımları</div>
+
+            <div style="display:flex; flex-direction:column; gap:20px;">
+              <div style="display:flex; gap:16px;">
+                <div style="width:32px; height:32px; background:var(--ocean); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">1</div>
+                <div>
+                  <div style="font-weight:700; margin-bottom:4px; color:var(--dark);">SQL Şemasını Çalıştır</div>
+                  <div style="font-size:13px; color:var(--muted); line-height:1.6;">
+                    <a href="https://supabase.com/dashboard/project/abwuifkiufhnfzahoxgv/sql/new" target="_blank" style="color:var(--ocean);">Supabase SQL Editor</a>'ü aç → <strong>supabase-schema.sql</strong> dosyasının içeriğini yapıştır → RUN. Tablolar ve RLS politikaları otomatik oluşur.
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:16px;">
+                <div style="width:32px; height:32px; background:var(--ocean); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">2</div>
+                <div>
+                  <div style="font-weight:700; margin-bottom:4px; color:var(--dark);">Bağlantıyı Test Et</div>
+                  <div style="font-size:13px; color:var(--muted); line-height:1.6;">
+                    Yukarıdaki "🔌 Bağlantıyı Test Et" butonuna bas. <strong>✅ Başarılı</strong> mesajı görürsen kurulum tamam!
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:16px;">
+                <div style="width:32px; height:32px; background:var(--ocean); color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">3</div>
+                <div>
+                  <div style="font-weight:700; margin-bottom:4px; color:var(--dark);">Fiyat & IBAN Ayarla</div>
+                  <div style="font-size:13px; color:var(--muted); line-height:1.6;">
+                    Sol menüden <strong>💰 Fiyat & Ayarlar</strong>'a git → IBAN, hesap adı, fiyatları gir → Kaydet. Bu bilgiler rezervasyon sayfasına otomatik yansır.
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:16px;">
+                <div style="width:32px; height:32px; background:#f59e0b; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">+</div>
+                <div>
+                  <div style="font-weight:700; margin-bottom:4px; color:var(--dark);">OpenWeather API (Hava Durumu)</div>
+                  <div style="font-size:13px; color:var(--muted); line-height:1.6;">
+                    1. <a href="https://openweathermap.org/api" target="_blank" style="color:var(--ocean);">openweathermap.org</a>'a git → Ücretsiz hesap oluştur<br>
+                    2. API Keys bölümünden API anahtarını kopyala<br>
+                    3. rezervasyon.html dosyasında <code style="background:#f4f8ff; padding:2px 6px; border-radius:4px;">CONFIG.WEATHER_API_KEY</code> satırına yapıştır<br>
+                    4. Ücretsiz plan günde 1000 istek hakkı verir (yeterli).
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex; gap:16px;">
+                <div style="width:32px; height:32px; background:#2cb67d; color:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0;">🚀</div>
+                <div>
+                  <div style="font-weight:700; margin-bottom:4px; color:var(--dark);">GitHub Pages ile Ücretsiz Yayınla</div>
+                  <div style="font-size:13px; color:var(--muted); line-height:1.6;">
+                    1. <a href="https://github.com" target="_blank" style="color:var(--ocean);">github.com</a>'da ücretsiz hesap aç → Yeni repository oluştur<br>
+                    2. <strong>rezervasyon.html</strong> ve <strong>hero.jpg</strong> dosyalarını yükle<br>
+                    3. Settings &gt; Pages &gt; Branch: main → Save<br>
+                    4. URL: <strong>https://kullaniciadı.github.io/repoadi</strong><br>
+                    Bu linki WhatsApp ve Instagram'da paylaş! 🎉
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// SUPABASE CLIENT
+// ============================================================
+const SUPABASE_URL = 'https://abwuifkiufhnfzahoxgv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFid3VpZmtpdWZobmZ6YWhveGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDE1MjksImV4cCI6MjA5NTQ3NzUyOX0.dCbXrabLLUsNlOJOz2lv6YwV9E3uHr7qq7WhnXXphYA';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================================
+// STATE
+// ============================================================
+let reservations = [];
+let config = {};
+
+// ============================================================
+// MOBILE SIDEBAR
+// ============================================================
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  sidebar.classList.toggle('mobile-open');
+  overlay.classList.toggle('show');
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+const pageTitles = {
+  dashboard: '📊 Dashboard',
+  rezervasyonlar: '📋 Tüm Rezervasyonlar',
+  fiyatlar: '💰 Fiyat & Ayarlar',
+  kampanyalar: '🎯 Kampanyalar',
+  kurulum: '⚙️ Kurulum'
+};
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[name];
+  event.currentTarget.classList.add('active');
+
+  if (name === 'dashboard' || name === 'rezervasyonlar') loadReservations();
+  if (name === 'fiyatlar') loadSettingsForm();
+  // Auto-close sidebar on mobile after navigation
+  if (window.innerWidth <= 768) {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+    if (sidebar.classList.contains('mobile-open')) {
+      sidebar.classList.remove('mobile-open');
+      overlay.classList.remove('show');
+    }
+  }
+}
+
+// ============================================================
+// LOAD RESERVATIONS
+// ============================================================
+async function loadReservations() {
+  try {
+    const { data, error } = await _supabase
+      .from('rezervasyonlar')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    // Map Supabase field names → display keys used by buildRow()
+    reservations = (data || []).map(r => ({
+      'Rez. No':           r.rez_no,
+      'Kayıt Tarihi':      r.kayit_tarihi,
+      'Aktivite Tarihi':   r.aktivite_tarihi,
+      'Saat/Seans':        r.saat_seans,
+      'Aktivite Türü':     r.aktivite_turu,
+      'Bölge':             r.bolge,
+      'Kişi Sayısı':       r.kisi_sayisi,
+      'Ad':                r.ad,
+      'Soyad':             r.soyad,
+      'Telefon':           r.telefon,
+      'E-Posta':           r.email,
+      'Toplam Tutar (₺)':  Number(r.toplam_tutar),
+      'Kapora (₺)':        Number(r.kapora),
+      'Rezervasyon Durumu': r.rezervasyon_durumu,
+      'Kapora Ödendi':     r.kapora_odendi,
+      '_id':               r.id,
+    }));
+    renderReservations();
+    updateStats();
+  } catch(e) {
+    console.error('Rezervasyonlar yüklenemedi:', e.message);
+    showDemoData();
+  }
+}
+
+function showDemoData() {
+  reservations = [
+    { 'Rez. No':'SUP-0001', 'Kayıt Tarihi':'2025-05-27', 'Aktivite Tarihi':'2025-06-01', 'Saat/Seans':'05:00-07:00', 'Aktivite Türü':'Etkinlik', 'Bölge':'Konyaaltı Beachpark', 'Kişi Sayısı':2, 'Ad':'Ahmet', 'Soyad':'Yılmaz', 'Telefon':'+90 555 123 4567', 'E-Posta':'ahmet@test.com', 'Toplam Tutar (₺)':1000, 'Kapora (₺)':500, 'Rezervasyon Durumu':'Onaylandı', 'Kapora Ödendi':'Evet' },
+    { 'Rez. No':'SUP-0002', 'Kayıt Tarihi':'2025-05-28', 'Aktivite Tarihi':'2025-06-03', 'Saat/Seans':'07:00-09:00', 'Aktivite Türü':'Kiralama', 'Bölge':'Konyaaltı Beachpark', 'Kişi Sayısı':1, 'Ad':'Maria', 'Soyad':'Schmidt', 'Telefon':'+49 176 123456', 'E-Posta':'maria@test.com', 'Toplam Tutar (₺)':300, 'Kapora (₺)':150, 'Rezervasyon Durumu':'Bekliyor', 'Kapora Ödendi':'Hayır' },
+    { 'Rez. No':'SUP-0003', 'Kayıt Tarihi':'2025-05-29', 'Aktivite Tarihi':'2025-06-05', 'Saat/Seans':'05:00-07:00', 'Aktivite Türü':'Etkinlik', 'Bölge':'Konyaaltı Beachpark', 'Kişi Sayısı':3, 'Ad':'Anna', 'Soyad':'Ivanova', 'Telefon':'+7 921 123 4567', 'E-Posta':'anna@test.com', 'Toplam Tutar (₺)':1500, 'Kapora (₺)':750, 'Rezervasyon Durumu':'Bekliyor', 'Kapora Ödendi':'Hayır' },
+  ];
+  renderReservations();
+  updateStats();
+}
+
+function renderReservations() {
+  const tbody = document.getElementById('recent-tbody');
+  const allTbody = document.getElementById('all-tbody');
+
+  const rows = reservations.slice(0, 5).map(r => buildRow(r)).join('');
+  const allRows = reservations.map(r => buildRow(r, true)).join('');
+
+  if (tbody) tbody.innerHTML = rows || '<tr><td colspan="8" class="loading">Rezervasyon yok</td></tr>';
+  if (allTbody) allTbody.innerHTML = allRows || '<tr><td colspan="14" class="loading">Rezervasyon yok</td></tr>';
+}
+
+function buildRow(r, full = false) {
+  const depositPaid = r['Kapora Ödendi'] === 'Evet';
+  const status = r['Rezervasyon Durumu'];
+  const statusBadge = status === 'Onaylandı'
+    ? '<span class="badge badge-success">Onaylandı</span>'
+    : status === 'İptal'
+    ? '<span class="badge badge-danger">İptal</span>'
+    : '<span class="badge badge-warning">Bekliyor</span>';
+
+  const depositBadge = depositPaid
+    ? '<span class="badge badge-success">✅ Ödendi</span>'
+    : '<span class="badge badge-warning">⏳ Bekliyor</span>';
+
+  const depositBtn = `<button class="deposit-btn ${depositPaid?'paid':'unpaid'}" onclick="toggleDeposit('${r['Rez. No']}', ${!depositPaid})">${depositPaid?'✅ Ödendi':'⏳ Bekliyor'}</button>`;
+
+  if (!full) {
+    return `<tr>
+      <td><strong>${r['Rez. No']||''}</strong></td>
+      <td>${r['Ad']||''} ${r['Soyad']||''}</td>
+      <td>${r['Aktivite Tarihi']||''}<br><small style="color:#888">${r['Saat/Seans']||''}</small></td>
+      <td><span class="badge badge-info">${r['Aktivite Türü']||''}</span></td>
+      <td>${r['Kişi Sayısı']||''}</td>
+      <td><strong>₺${(r['Toplam Tutar (₺)'||0).toLocaleString()}</strong></td>
+      <td>${depositBtn}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }
+
+  return `<tr>
+    <td><strong style="color:var(--ocean)">${r['Rez. No']||''}</strong></td>
+    <td style="font-size:11px;color:#888">${(r['Kayıt Tarihi']||'').toString().substring(0,10)}</td>
+    <td>${r['Aktivite Tarihi']||''}</td>
+    <td style="font-size:12px">${r['Saat/Seans']||''}</td>
+    <td><span class="badge badge-info">${r['Aktivite Türü']||''}</span></td>
+    <td style="font-size:12px">${r['Bölge']||''}</td>
+    <td style="text-align:center">${r['Kişi Sayısı']||''}</td>
+    <td><strong>${r['Ad']||''} ${r['Soyad']||''}</strong></td>
+    <td style="font-size:12px">${r['Telefon']||''}</td>
+    <td style="font-size:12px">${r['E-Posta']||''}</td>
+    <td><strong>₺${(r['Toplam Tutar (₺)'||0).toLocaleString()}</strong></td>
+    <td>₺${(r['Kapora (₺)'||0).toLocaleString()}</td>
+    <td>${depositBtn}</td>
+    <td>${statusBadge}</td>
+  </tr>`;
+}
+
+function updateStats() {
+  const total = reservations.length;
+  const paid = reservations.filter(r => r['Kapora Ödendi'] === 'Evet').length;
+  const pending = reservations.filter(r => r['Kapora Ödendi'] !== 'Evet').length;
+  const revenue = reservations.reduce((sum, r) => sum + (r['Toplam Tutar (₺)'] || 0), 0);
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-paid').textContent = paid;
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-revenue').textContent = '₺' + revenue.toLocaleString();
+}
+
+// ============================================================
+// TOGGLE DEPOSIT
+// ============================================================
+async function toggleDeposit(rezNo, paid) {
+  const label = paid ? 'Evet' : 'Hayır';
+  const newStatus = paid ? 'Onaylandı' : 'Bekliyor';
+
+  // Optimistic local update
+  reservations = reservations.map(r => {
+    if (r['Rez. No'] === rezNo) {
+      r['Kapora Ödendi'] = label;
+      r['Rezervasyon Durumu'] = newStatus;
+    }
+    return r;
+  });
+  renderReservations();
+  updateStats();
+  showToast(paid ? '✅ Kapora alındı olarak işaretlendi' : '⏳ Kapora bekleniyor olarak işaretlendi');
+
+  // Persist to Supabase
+  try {
+    const { error } = await _supabase
+      .from('rezervasyonlar')
+      .update({ kapora_odendi: label, rezervasyon_durumu: newStatus })
+      .eq('rez_no', rezNo);
+    if (error) throw error;
+  } catch(e) {
+    showToast('❌ Güncelleme hatası: ' + e.message);
+    loadReservations(); // rollback by reloading
+  }
+}
+
+// ============================================================
+// FILTER RESERVATIONS
+// ============================================================
+function filterReservations() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const allTbody = document.getElementById('all-tbody');
+  const filtered = reservations.filter(r =>
+    (r['Ad']||'').toLowerCase().includes(q) ||
+    (r['Soyad']||'').toLowerCase().includes(q) ||
+    (r['Telefon']||'').includes(q) ||
+    (r['Rez. No']||'').toLowerCase().includes(q)
+  );
+  allTbody.innerHTML = filtered.map(r => buildRow(r, true)).join('') ||
+    '<tr><td colspan="14" class="loading">Sonuç bulunamadı</td></tr>';
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+async function loadSettingsForm() {
+  try {
+    const { data, error } = await _supabase
+      .from('ayarlar')
+      .select('*')
+      .eq('id', 1)
+      .single();
+    if (error) throw error;
+    if (data) {
+      if (data.iban)               document.getElementById('s-iban').value = data.iban;
+      if (data.hesap_adi)          document.getElementById('s-accountName').value = data.hesap_adi;
+      if (data.etkinlik_fiyati)    document.getElementById('s-eventPrice').value = data.etkinlik_fiyati;
+      if (data.kiralama_fiyati)    document.getElementById('s-rentalPrice').value = data.kiralama_fiyati;
+      if (data.kapora_yuzdesi)     document.getElementById('s-depositPercent').value = data.kapora_yuzdesi;
+      if (data.max_kisi)           document.getElementById('s-maxPeople').value = data.max_kisi;
+      if (data.admin_email)        document.getElementById('s-adminEmail').value = data.admin_email;
+      if (data.whatsapp_no)        document.getElementById('s-whatsapp').value = data.whatsapp_no;
+      if (data.sezon_durumu)       document.getElementById('s-seasonActive').value = data.sezon_durumu;
+      // Kampanya alanlarını da doldur
+      if (data.kampanya1_ad)       document.getElementById('c1-name').value = data.kampanya1_ad;
+      if (data.kampanya1_kod)      document.getElementById('c1-code').value = data.kampanya1_kod;
+      if (data.kampanya1_oran)     document.getElementById('c1-rate').value = data.kampanya1_oran;
+      if (data.kampanya1_aktif !== undefined) document.getElementById('c1-active').checked = data.kampanya1_aktif;
+      if (data.kampanya2_ad)       document.getElementById('c2-name').value = data.kampanya2_ad;
+      if (data.kampanya2_kod)      document.getElementById('c2-code').value = data.kampanya2_kod;
+      if (data.kampanya2_oran)     document.getElementById('c2-rate').value = data.kampanya2_oran;
+      if (data.kampanya2_aktif !== undefined) document.getElementById('c2-active').checked = data.kampanya2_aktif;
+    }
+  } catch(e) {
+    console.warn('Ayarlar yüklenemedi:', e.message);
+  }
+}
+
+async function saveSettings() {
+  const updates = {
+    iban:              document.getElementById('s-iban').value,
+    hesap_adi:         document.getElementById('s-accountName').value,
+    etkinlik_fiyati:   parseInt(document.getElementById('s-eventPrice').value) || 500,
+    kiralama_fiyati:   parseInt(document.getElementById('s-rentalPrice').value) || 500,
+    kapora_yuzdesi:    parseInt(document.getElementById('s-depositPercent').value) || 50,
+    max_kisi:          parseInt(document.getElementById('s-maxPeople').value) || 10,
+    admin_email:       document.getElementById('s-adminEmail').value,
+    whatsapp_no:       document.getElementById('s-whatsapp').value,
+    sezon_durumu:      document.getElementById('s-seasonActive').value,
+    updated_at:        new Date().toISOString(),
+  };
+  try {
+    const { error } = await _supabase
+      .from('ayarlar')
+      .update(updates)
+      .eq('id', 1);
+    if (error) throw error;
+    showToast('✅ Ayarlar kaydedildi!');
+  } catch(e) {
+    showToast('❌ Kayıt hatası: ' + e.message);
+  }
+}
+
+// ============================================================
+// CAMPAIGNS
+// ============================================================
+async function saveCampaigns() {
+  const updates = {
+    kampanya1_ad:    document.getElementById('c1-name').value,
+    kampanya1_kod:   document.getElementById('c1-code').value,
+    kampanya1_oran:  parseInt(document.getElementById('c1-rate').value) || 10,
+    kampanya1_aktif: document.getElementById('c1-active').checked,
+    kampanya2_ad:    document.getElementById('c2-name').value,
+    kampanya2_kod:   document.getElementById('c2-code').value,
+    kampanya2_oran:  parseInt(document.getElementById('c2-rate').value) || 20,
+    kampanya2_aktif: document.getElementById('c2-active').checked,
+    updated_at:      new Date().toISOString(),
+  };
+  try {
+    const { error } = await _supabase
+      .from('ayarlar')
+      .update(updates)
+      .eq('id', 1);
+    if (error) throw error;
+    showToast('✅ Kampanyalar kaydedildi!');
+  } catch(e) {
+    showToast('❌ Kayıt hatası: ' + e.message);
+  }
+}
+
+// ============================================================
+// SUPABASE BAĞLANTI TESTİ
+// ============================================================
+async function testConnection() {
+  try {
+    const { data, error } = await _supabase
+      .from('ayarlar')
+      .select('iban, hesap_adi')
+      .eq('id', 1)
+      .single();
+    if (error) throw error;
+    showToast('✅ Supabase bağlantısı başarılı! IBAN: ' + (data?.iban || 'Ayarlı'));
+  } catch(e) {
+    showToast('❌ Bağlantı hatası: ' + e.message);
+  }
+}
+
+// ============================================================
+// CSV EXPORT
+// ============================================================
+function exportCSV() {
+  if (!reservations.length) { showToast('Veri yok'); return; }
+  const keys = Object.keys(reservations[0]);
+  const csv = [keys.join(','), ...reservations.map(r => keys.map(k => '"' + (r[k] || '') + '"').join(','))].join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sup_rezervasyonlar_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  showToast('📥 CSV indirildi!');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadReservations();
+});
+</script>
+</body>
+</html>
