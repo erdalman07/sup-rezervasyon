@@ -8,6 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- SheetJS (Excel export) -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -442,6 +444,7 @@ input:checked + .slider:before { transform: translateX(20px); }
             <input type="text" class="form-input" placeholder="🔍 Ara..." id="searchInput" oninput="filterReservations()" style="padding:7px 12px; height:36px;">
             <button class="btn btn-outline btn-sm" onclick="loadReservations()">🔄 Yenile</button>
             <button class="btn btn-primary btn-sm" onclick="exportCSV()">📥 CSV İndir</button>
+            <button class="btn btn-success btn-sm" onclick="exportExcel()">📊 Excel İndir</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -1127,6 +1130,28 @@ async function testConnection() {
 // ============================================================
 // CSV EXPORT
 // ============================================================
+function exportExcel() {
+  if (!reservations.length) { showToast('Veri yok'); return; }
+  const cols = [
+    'Rez. No','Kayıt Tarihi','Aktivite Tarihi','Saat/Seans','Aktivite Türü',
+    'Bölge','Kişi Sayısı','Ad','Soyad','Telefon','E-Posta',
+    'Not','Toplam Tutar (₺)','Kapora (₺)','Kapora Ödendi','Durum','Dil'
+  ];
+  const rows = reservations.map(r => cols.map(c => r[c] ?? ''));
+  const ws = XLSX.utils.aoa_to_sheet([cols, ...rows]);
+  // Sütun genişlikleri
+  ws['!cols'] = [
+    {wch:14},{wch:12},{wch:14},{wch:14},{wch:12},
+    {wch:18},{wch:8},{wch:12},{wch:12},{wch:14},{wch:22},
+    {wch:20},{wch:12},{wch:12},{wch:12},{wch:10},{wch:6}
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Rezervasyonlar');
+  const tarih = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, 'SUP_Rezervasyonlar_' + tarih + '.xlsx');
+  showToast('📊 Excel indirildi!');
+}
+
 function exportCSV() {
   if (!reservations.length) { showToast('Veri yok'); return; }
   const keys = Object.keys(reservations[0]);
