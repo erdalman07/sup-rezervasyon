@@ -921,7 +921,7 @@ function buildRow(r, full = false) {
       <td>${r['Aktivite Tarihi']||''}<br><small style="color:#888">${r['Saat/Seans']||''}</small></td>
       <td><span class="badge badge-info">${r['Aktivite Türü']||''}</span></td>
       <td>${r['Kişi Sayısı']||''}</td>
-      <td><strong>₺${(r['Toplam Tutar (₺)'||0).toLocaleString()}</strong></td>
+      <td><strong>₺${(r['Toplam Tutar (₺)']||0).toLocaleString()}</strong></td>
       <td>${depositBtn}</td>
       <td>${statusBadge}</td>
     </tr>`;
@@ -938,8 +938,8 @@ function buildRow(r, full = false) {
     <td><strong>${r['Ad']||''} ${r['Soyad']||''}</strong></td>
     <td style="font-size:12px">${r['Telefon']||''}</td>
     <td style="font-size:12px">${r['E-Posta']||''}</td>
-    <td><strong>₺${(r['Toplam Tutar (₺)'||0).toLocaleString()}</strong></td>
-    <td>₺${(r['Kapora (₺)'||0).toLocaleString()}</td>
+    <td><strong>₺${(r['Toplam Tutar (₺)']||0).toLocaleString()}</strong></td>
+    <td>₺${(r['Kapora (₺)']||0).toLocaleString()}</td>
     <td>${depositBtn}</td>
     <td>${statusBadge}</td>
   </tr>`;
