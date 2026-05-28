@@ -255,13 +255,79 @@ input:checked + .slider:before { transform: translateX(20px); }
   .topbar-title { font-size: 14px; }
   .card-body { padding: 14px 12px; }
   .card-header { padding: 14px 12px; }
-  /* Table font size */
   td { font-size: 11px; padding: 8px 8px; }
   th { font-size: 10px; padding: 8px 8px; }
 }
+
+/* ====== LOGIN OVERLAY ====== */
+#login-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: linear-gradient(135deg, #03045e 0%, #0077b6 60%, #00b4d8 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+#login-overlay.hidden { display: none; }
+.login-box {
+  background: white; border-radius: 24px;
+  padding: 40px 36px; width: 100%; max-width: 380px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+  text-align: center;
+}
+.login-logo {
+  font-size: 48px; margin-bottom: 8px;
+}
+.login-title {
+  font-size: 22px; font-weight: 700; color: var(--dark);
+  margin-bottom: 4px;
+}
+.login-sub {
+  font-size: 13px; color: var(--muted); margin-bottom: 28px;
+}
+.login-form { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+.login-form input {
+  width: 100%; padding: 12px 16px;
+  border: 1.5px solid var(--border); border-radius: 10px;
+  font-size: 14px; font-family: inherit;
+  outline: none; transition: border-color 0.2s;
+}
+.login-form input:focus { border-color: var(--ocean); }
+.login-btn {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, var(--dark), var(--ocean));
+  color: white; border: none; border-radius: 10px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s; margin-top: 4px;
+}
+.login-btn:hover { opacity: 0.9; }
+.login-error {
+  color: var(--danger); font-size: 13px;
+  text-align: center; display: none; margin-top: 4px;
+}
+.logout-btn {
+  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+  color: white; padding: 6px 14px; border-radius: 8px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: background 0.2s;
+}
+.logout-btn:hover { background: rgba(255,255,255,0.25); }
 </style>
 </head>
 <body>
+
+<!-- ====== LOGIN OVERLAY ====== -->
+<div id="login-overlay">
+  <div class="login-box">
+    <div class="login-logo">🌊</div>
+    <div class="login-title">SUP Admin Paneli</div>
+    <div class="login-sub">Konyaaltı Beachpark</div>
+    <form class="login-form" onsubmit="doLogin(event)">
+      <input type="text" id="login-user" placeholder="Kullanıcı adı" autocomplete="username" required>
+      <input type="password" id="login-pass" placeholder="Şifre" autocomplete="current-password" required>
+      <div class="login-error" id="login-error">❌ Kullanıcı adı veya şifre hatalı</div>
+      <button type="submit" class="login-btn">Giriş Yap →</button>
+    </form>
+  </div>
+</div>
 
 <!-- ====== SIDEBAR ====== -->
 <aside class="sidebar">
@@ -304,6 +370,7 @@ input:checked + .slider:before { transform: translateX(20px); }
     <div class="topbar-right">
       <span class="topbar-badge" id="status-badge">🟢 Sistem Aktif</span>
       <a href="rezervasyon.html" target="_blank" class="btn btn-primary">🔗 Rezervasyon Sayfası</a>
+      <button class="logout-btn" onclick="doLogout()">🚪 Çıkış</button>
     </div>
   </div>
   <div class="mobile-overlay" id="mobile-overlay" onclick="toggleSidebar()"></div>
@@ -496,10 +563,28 @@ input:checked + .slider:before { transform: translateX(20px); }
               </select>
             </div>
 
-            <div class="form-group full" style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:12px; padding:16px;">
-              <div style="font-size:13px; color:#0369a1; font-weight:600; margin-bottom:8px;">ℹ️ Google Sheets Entegrasyonu</div>
-              <div style="font-size:12px; color:#075985;">
-                Bu ayarları değiştirdikten sonra "Kaydet"e tıklayın. Değişiklikler Google Sheets Admin Paneli'ne otomatik kaydedilir ve rezervasyon sayfasına yansır.
+            <div class="form-group full" style="border-top:1px solid var(--border); padding-top:16px; margin-top:4px;">
+              <div style="font-size:14px; font-weight:700; color:var(--dark); margin-bottom:16px;">🔗 Entegrasyon Ayarları</div>
+              <div class="settings-grid" style="margin:0;">
+
+                <div class="form-group full">
+                  <label class="form-label">Google Sheets URL (Apps Script)</label>
+                  <div class="form-hint">Rezervasyonlar hem Supabase'e hem Sheets'e yazılır. <a href="https://script.google.com" target="_blank" style="color:var(--ocean);">Apps Script'ten alın.</a></div>
+                  <input type="url" class="form-input" id="s-sheetsUrl" placeholder="https://script.google.com/macros/s/...">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">OpenWeather API Key</label>
+                  <div class="form-hint">Hava durumu widget'ı için. <a href="https://openweathermap.org/api" target="_blank" style="color:var(--ocean);">Ücretsiz alın.</a></div>
+                  <input type="text" class="form-input" id="s-weatherKey" placeholder="abc123def456...">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Admin Şifresi</label>
+                  <div class="form-hint">Mevcut şifre: sup2024 (değiştirmeniz önerilir)</div>
+                  <input type="password" class="form-input" id="s-adminPass" placeholder="Yeni şifre">
+                </div>
+
               </div>
             </div>
 
@@ -663,6 +748,51 @@ input:checked + .slider:before { transform: translateX(20px); }
 const SUPABASE_URL = 'https://abwuifkiufhnfzahoxgv.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFid3VpZmtpdWZobmZ6YWhveGd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5MDE1MjksImV4cCI6MjA5NTQ3NzUyOX0.dCbXrabLLUsNlOJOz2lv6YwV9E3uHr7qq7WhnXXphYA';
 const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ============================================================
+// LOGIN — Varsayılan: admin / sup2024
+// Şifreyi değiştirmek için admin paneli Fiyat & Ayarlar
+// ============================================================
+const DEFAULT_ADMIN_USER = 'admin';
+const DEFAULT_ADMIN_PASS = 'sup2024';
+let _adminPass = DEFAULT_ADMIN_PASS; // Supabase'den güncel şifre yüklenir
+
+function checkLoginState() {
+  const loggedIn = sessionStorage.getItem('sup_admin_logged_in') === '1';
+  if (loggedIn) {
+    document.getElementById('login-overlay').classList.add('hidden');
+  }
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+
+  // Supabase'den güncel şifreyi al
+  try {
+    const { data } = await _supabase.from('ayarlar').select('admin_password').eq('id', 1).single();
+    if (data?.admin_password) _adminPass = data.admin_password;
+  } catch(e) {}
+
+  if (user === DEFAULT_ADMIN_USER && pass === _adminPass) {
+    sessionStorage.setItem('sup_admin_logged_in', '1');
+    document.getElementById('login-overlay').classList.add('hidden');
+    errEl.style.display = 'none';
+    loadReservations();
+  } else {
+    errEl.style.display = 'block';
+    document.getElementById('login-pass').value = '';
+  }
+}
+
+function doLogout() {
+  sessionStorage.removeItem('sup_admin_logged_in');
+  document.getElementById('login-overlay').classList.remove('hidden');
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
 
 // ============================================================
 // STATE
@@ -905,6 +1035,11 @@ async function loadSettingsForm() {
       if (data.kampanya2_kod)      document.getElementById('c2-code').value = data.kampanya2_kod;
       if (data.kampanya2_oran)     document.getElementById('c2-rate').value = data.kampanya2_oran;
       if (data.kampanya2_aktif !== undefined) document.getElementById('c2-active').checked = data.kampanya2_aktif;
+      // Entegrasyon alanları
+      if (data.sheets_url)         document.getElementById('s-sheetsUrl').value = data.sheets_url;
+      if (data.weather_api_key)    document.getElementById('s-weatherKey').value = data.weather_api_key;
+      // Şifreyi gösterme, sadece placeholder güncelle
+      if (data.admin_password)     document.getElementById('s-adminPass').placeholder = '(Mevcut şifre kayıtlı — değiştirmek için yaz)';
     }
   } catch(e) {
     console.warn('Ayarlar yüklenemedi:', e.message);
@@ -912,6 +1047,7 @@ async function loadSettingsForm() {
 }
 
 async function saveSettings() {
+  const newPass = document.getElementById('s-adminPass').value.trim();
   const updates = {
     iban:              document.getElementById('s-iban').value,
     hesap_adi:         document.getElementById('s-accountName').value,
@@ -922,8 +1058,16 @@ async function saveSettings() {
     admin_email:       document.getElementById('s-adminEmail').value,
     whatsapp_no:       document.getElementById('s-whatsapp').value,
     sezon_durumu:      document.getElementById('s-seasonActive').value,
+    sheets_url:        document.getElementById('s-sheetsUrl').value.trim(),
+    weather_api_key:   document.getElementById('s-weatherKey').value.trim(),
     updated_at:        new Date().toISOString(),
   };
+  // Şifre değişikliği sadece doluysa uygula
+  if (newPass) {
+    updates.admin_password = newPass;
+    _adminPass = newPass;
+    document.getElementById('s-adminPass').value = '';
+  }
   try {
     const { error } = await _supabase
       .from('ayarlar')
@@ -1008,7 +1152,7 @@ function showToast(msg) {
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-  loadReservations();
+  checkLoginState();
 });
 </script>
 </body>

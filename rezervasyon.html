@@ -1324,7 +1324,8 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // CONFIG — Supabase ayarlar tablosundan dolar
 // ============================================
 const CONFIG = {
-  WEATHER_API_KEY: 'YOUR_OPENWEATHER_API_KEY', // openweathermap.org'dan alın
+  WEATHER_API_KEY: '',            // Supabase ayarlar tablosundan yüklenir
+  SHEETS_URL: '',                 // Google Sheets Apps Script URL — Supabase'den yüklenir
   IBAN: 'TR00 0000 0000 0000 0000 0000 00',
   ACCOUNT_NAME: 'Ad Soyad',
   EVENT_PRICE_PER_PERSON: 500,
@@ -1386,6 +1387,8 @@ async function loadConfig() {
       if (data.kiralama_baslangic) CONFIG.RENTAL_START_HOUR = data.kiralama_baslangic;
       if (data.kiralama_bitis)     CONFIG.RENTAL_END_HOUR   = data.kiralama_bitis;
       if (data.whatsapp_no)        CONFIG.WHATSAPP_NUMBER   = data.whatsapp_no;
+      if (data.weather_api_key)    CONFIG.WEATHER_API_KEY   = data.weather_api_key;
+      if (data.sheets_url)         CONFIG.SHEETS_URL        = data.sheets_url;
     }
   } catch(e) {
     console.warn('Supabase ayarlar yüklenemedi, varsayılanlar kullanılıyor:', e.message);
@@ -1601,6 +1604,7 @@ async function submitAndGoStep5() {
   const rezNo = generateRezId();
   _pendingRezId = rezNo;
 
+  // 1. Supabase'e kaydet (zorunlu)
   try {
     const { error } = await _supabase
       .from('rezervasyonlar')
@@ -1629,6 +1633,35 @@ async function submitAndGoStep5() {
       ? 'Rezervasyon kaydedilirken hata oluştu. Lütfen tekrar deneyin.'
       : 'An error occurred. Please try again.');
     return;
+  }
+
+  // 2. Google Sheets'e de yaz (opsiyonel — arka planda, hata olursa işlem durmuyor)
+  if (CONFIG.SHEETS_URL) {
+    fetch(CONFIG.SHEETS_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      mode: 'no-cors',
+      body: JSON.stringify({
+        action:       'addReservation',
+        date:         dateStr,
+        time:         timeStr,
+        activityType: booking.activityType,
+        location:     'Konyaaltı Beachpark',
+        people:       booking.people,
+        firstName:    booking.firstName,
+        lastName:     booking.lastName,
+        phone:        booking.phone,
+        email:        booking.email,
+        note:         booking.note,
+        total:        total,
+        deposit:      deposit,
+        lang:         currentLang,
+        status:       'Bekliyor',
+        depositPaid:  'Hayır',
+        timestamp:    new Date().toISOString(),
+        rezNo:        rezNo,
+      }),
+    }).catch(e => console.warn('Sheets yazma hatası (önemsiz):', e.message));
   }
 
   goStep(5);
