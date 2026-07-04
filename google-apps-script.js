@@ -5,7 +5,7 @@
 // ============================================================
 
 const SPREADSHEET_ID = '1_a02MPfXb0niSW9RAQMZ_iT_qDkOlRVU';
-const SHEET_NAME = 'WebSitesi';
+const SHEET_NAME = 'WebRezervasyon';
 
 const HEADERS = [
   'Rez. No',
