@@ -1062,10 +1062,10 @@ footer a { color: var(--foam); text-decoration: none; }
 
           <!-- Rental time (shown only for rental) -->
           <div id="rental-time-selection" style="margin-top:24px; display:none;">
-            <div class="form-label" data-tr="Başlangıç Saati" data-en="Start Time" data-ru="Время начала">Başlangıç Saati</div>
-            <select class="form-select" id="rentalHourSelect" style="max-width:200px;">
+            <div class="form-label" data-tr="Saat Seçin" data-en="Select Time" data-ru="Выберите время">Saat Seçin</div>
+            <div class="session-cards" id="rentalSlotGrid" style="margin-top:12px;">
               <!-- Admin paneldeki saatlere göre JS tarafından doldurulur -->
-            </select>
+            </div>
           </div>
 
           <div class="form-nav">
@@ -1474,8 +1474,8 @@ function validateStep(n) {
     if (booking.activityType === 'event' && !booking.session) {
       showToast(currentLang === 'tr' ? 'Lütfen seans seçin' : 'Please select a session'); return false;
     }
-    if (booking.activityType === 'rental') {
-      booking.rentalStart = document.getElementById('rentalHourSelect')?.value || '09:00';
+    if (booking.activityType === 'rental' && !booking.rentalStart) {
+      showToast(currentLang === 'tr' ? 'Lütfen saat seçin' : 'Please select a time'); return false;
     }
   }
   if (n === 3) {
@@ -1624,7 +1624,7 @@ async function submitAndGoStep5() {
   let timeStr = '';
   if (booking.activityType === 'event') timeStr = booking.session;
   else {
-    booking.rentalStart = document.getElementById('rentalHourSelect')?.value || booking.rentalStart || '09:00';
+    // rentalStart kart seçimiyle zaten atandı
     timeStr = booking.rentalStart + ' saatinde kiralama';
   }
 
@@ -1734,9 +1734,7 @@ function updateSummary() {
   if (booking.activityType === 'event') {
     timeStr = booking.session || '–';
   } else {
-    const hr = document.getElementById('rentalHourSelect')?.value || booking.rentalStart || '09:00';
-    booking.rentalStart = hr;
-    timeStr = hr + ' saatinde kiralama';
+    timeStr = (booking.rentalStart || '–') + ' saatinde kiralama';
   }
   document.getElementById('sum-datetime').textContent = dateStr + ' · ' + timeStr;
   document.getElementById('sum-people').textContent = booking.people + (lang === 'tr' ? ' kişi' : lang === 'en' ? ' people' : ' чел.');
@@ -1787,28 +1785,31 @@ function updateSummary() {
 // SAATLERİ OLUŞTUR (05:00-19:00, 30dk aralık)
 // ============================================
 function buildRentalTimeSelect() {
+  const grid = document.getElementById('rentalSlotGrid');
+  if (!grid) return;
   const [startH, startM] = (CONFIG.RENTAL_START_HOUR || '05:00').split(':').map(Number);
-  const [endH, endM]   = (CONFIG.RENTAL_END_HOUR   || '19:00').split(':').map(Number);
+  const [endH, endM]     = (CONFIG.RENTAL_END_HOUR   || '19:00').split(':').map(Number);
   const startMins = startH * 60 + startM;
   const endMins   = endH * 60 + endM;
+  grid.innerHTML = '';
+  for (let m = startMins; m < endMins; m += 60) {
+    const hh = String(Math.floor(m / 60)).padStart(2, '0');
+    const mm = String(m % 60).padStart(2, '0');
+    const time = `${hh}:${mm}`;
+    const card = document.createElement('div');
+    card.className = 'session-card' + (booking.rentalStart === time ? ' selected' : '');
+    card.id = `rslot-${time.replace(':','')}`;
+    card.innerHTML = `<div class="sc-time">${time}</div>`;
+    card.onclick = () => selectRentalSlot(time);
+    grid.appendChild(card);
+  }
+}
 
-  // Hem etkinlik saatlerini hem kiralama saatlerini doldur
-  ['rentalStartTime', 'rentalHourSelect'].forEach(id => {
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '';
-    for (let m = startMins; m <= endMins; m += 30) {
-      const hh = String(Math.floor(m / 60)).padStart(2, '0');
-      const mm = String(m % 60).padStart(2, '0');
-      const opt = document.createElement('option');
-      opt.value = `${hh}:${mm}`;
-      opt.textContent = `${hh}:${mm}`;
-      if (opt.value === current) opt.selected = true;
-      sel.appendChild(opt);
-    }
-    if (!sel.value) sel.selectedIndex = 0;
-  });
+function selectRentalSlot(time) {
+  booking.rentalStart = time;
+  document.querySelectorAll('#rentalSlotGrid .session-card').forEach(c => c.classList.remove('selected'));
+  const el = document.getElementById('rslot-' + time.replace(':',''));
+  if (el) el.classList.add('selected');
 }
 
 // ============================================
