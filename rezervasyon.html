@@ -1064,19 +1064,7 @@ footer a { color: var(--foam); text-decoration: none; }
           <div id="rental-time-selection" style="margin-top:24px; display:none;">
             <div class="form-label" data-tr="Başlangıç Saati" data-en="Start Time" data-ru="Время начала">Başlangıç Saati</div>
             <select class="form-select" id="rentalHourSelect" style="max-width:200px;">
-              <option value="05:00">05:00</option>
-              <option value="06:00">06:00</option>
-              <option value="07:00">07:00</option>
-              <option value="08:00">08:00</option>
-              <option value="09:00" selected>09:00</option>
-              <option value="10:00">10:00</option>
-              <option value="11:00">11:00</option>
-              <option value="12:00">12:00</option>
-              <option value="13:00">13:00</option>
-              <option value="14:00">14:00</option>
-              <option value="15:00">15:00</option>
-              <option value="16:00">16:00</option>
-              <option value="17:00">17:00</option>
+              <!-- Admin paneldeki saatlere göre JS tarafından doldurulur -->
             </select>
           </div>
 
@@ -1799,25 +1787,28 @@ function updateSummary() {
 // SAATLERİ OLUŞTUR (05:00-19:00, 30dk aralık)
 // ============================================
 function buildRentalTimeSelect() {
-  const sel = document.getElementById('rentalStartTime');
-  if (!sel) return;
   const [startH, startM] = (CONFIG.RENTAL_START_HOUR || '05:00').split(':').map(Number);
   const [endH, endM]   = (CONFIG.RENTAL_END_HOUR   || '19:00').split(':').map(Number);
   const startMins = startH * 60 + startM;
   const endMins   = endH * 60 + endM;
-  const current = sel.value;
-  sel.innerHTML = '';
-  for (let m = startMins; m <= endMins; m += 30) {
-    const hh = String(Math.floor(m / 60)).padStart(2, '0');
-    const mm = String(m % 60).padStart(2, '0');
-    const opt = document.createElement('option');
-    opt.value = `${hh}:${mm}`;
-    opt.textContent = `${hh}:${mm}`;
-    if (opt.value === current) opt.selected = true;
-    sel.appendChild(opt);
-  }
-  // Default to first option if no match
-  if (!sel.value) sel.selectedIndex = 0;
+
+  // Hem etkinlik saatlerini hem kiralama saatlerini doldur
+  ['rentalStartTime', 'rentalHourSelect'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '';
+    for (let m = startMins; m <= endMins; m += 30) {
+      const hh = String(Math.floor(m / 60)).padStart(2, '0');
+      const mm = String(m % 60).padStart(2, '0');
+      const opt = document.createElement('option');
+      opt.value = `${hh}:${mm}`;
+      opt.textContent = `${hh}:${mm}`;
+      if (opt.value === current) opt.selected = true;
+      sel.appendChild(opt);
+    }
+    if (!sel.value) sel.selectedIndex = 0;
+  });
 }
 
 // ============================================
