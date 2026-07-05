@@ -1067,7 +1067,14 @@ footer a { color: var(--foam); text-decoration: none; }
           <div id="rental-time-selection" style="margin-top:24px; display:none;">
             <div class="form-label" data-tr="Saat Seçin" data-en="Select Time" data-ru="Выберите время">Saat Seçin</div>
             <div class="session-cards" id="rentalSlotGrid" style="margin-top:12px;">
-              <!-- Admin paneldeki saatlere göre JS tarafından doldurulur -->
+              <!-- JS tarafından doldurulur -->
+            </div>
+            <!-- Kendi saatini seç açıldığında -->
+            <div id="rentalCustomTimeBox" style="display:none; margin-top:16px;">
+              <div class="form-label" style="margin-bottom:8px;" data-tr="Başlangıç Saati" data-en="Start Time" data-ru="Время начала">Başlangıç Saati</div>
+              <select class="form-select" id="rentalCustomHour" style="max-width:200px;" onchange="booking.rentalStart=this.value">
+                <!-- JS tarafından doldurulur -->
+              </select>
             </div>
           </div>
 
@@ -1329,6 +1336,13 @@ const CONFIG = {
   RENTAL_START_HOUR: '05:00',
   RENTAL_END_HOUR: '19:00',
   WHATSAPP_NUMBER: '905378653872',
+  KIRALAMA_SEFER1_AD: '1. Sefer',
+  KIRALAMA_SEFER1_BAS: '05:00',
+  KIRALAMA_SEFER1_BIT: '07:00',
+  KIRALAMA_SEFER2_AD: '2. Sefer',
+  KIRALAMA_SEFER2_BAS: '07:00',
+  KIRALAMA_SEFER2_BIT: '09:00',
+  KIRALAMA_OZEL_SAAT: true,
 };
 
 // ============================================
@@ -1421,6 +1435,13 @@ async function loadConfig() {
       if (data.whatsapp_no)        CONFIG.WHATSAPP_NUMBER   = data.whatsapp_no;
       if (data.weather_api_key)    CONFIG.WEATHER_API_KEY   = data.weather_api_key;
       if (data.sheets_url)         CONFIG.SHEETS_URL        = data.sheets_url;
+      if (data.kiralama_sefer1_ad)        CONFIG.KIRALAMA_SEFER1_AD  = data.kiralama_sefer1_ad;
+      if (data.kiralama_sefer1_baslangic) CONFIG.KIRALAMA_SEFER1_BAS = data.kiralama_sefer1_baslangic;
+      if (data.kiralama_sefer1_bitis)     CONFIG.KIRALAMA_SEFER1_BIT = data.kiralama_sefer1_bitis;
+      if (data.kiralama_sefer2_ad)        CONFIG.KIRALAMA_SEFER2_AD  = data.kiralama_sefer2_ad;
+      if (data.kiralama_sefer2_baslangic) CONFIG.KIRALAMA_SEFER2_BAS = data.kiralama_sefer2_baslangic;
+      if (data.kiralama_sefer2_bitis)     CONFIG.KIRALAMA_SEFER2_BIT = data.kiralama_sefer2_bitis;
+      if (data.kiralama_ozel_saat !== undefined) CONFIG.KIRALAMA_OZEL_SAAT = data.kiralama_ozel_saat;
     }
   } catch(e) {
     console.warn('Supabase ayarlar yüklenemedi, varsayılanlar kullanılıyor:', e.message);
@@ -1477,8 +1498,12 @@ function validateStep(n) {
     if (booking.activityType === 'event' && !booking.session) {
       showToast(currentLang === 'tr' ? 'Lütfen seans seçin' : 'Please select a session'); return false;
     }
-    if (booking.activityType === 'rental' && !booking.rentalStart) {
-      showToast(currentLang === 'tr' ? 'Lütfen saat seçin' : 'Please select a time'); return false;
+    if (booking.activityType === 'rental') {
+      if (!booking.rentalStart) { showToast(currentLang === 'tr' ? 'Lütfen saat seçin' : 'Please select a time'); return false; }
+      // custom seçiliyse dropdown değerini al
+      if (booking.rentalStart === 'custom') {
+        booking.rentalStart = document.getElementById('rentalCustomHour')?.value || '09:00';
+      }
     }
   }
   if (n === 3) {
@@ -1630,7 +1655,8 @@ async function submitAndGoStep5() {
   if (booking.activityType === 'event') timeStr = booking.session;
   else {
     // rentalStart kart seçimiyle zaten atandı
-    timeStr = booking.rentalStart + ' saatinde kiralama';
+    const rs = booking.rentalStart || '09:00';
+    timeStr = rs.includes('-') ? rs.replace('-', ' – ') + ' kiralama' : rs + ' saatinde kiralama';
   }
 
   const total = booking.activityType === 'rental' ? 0 : calculateTotal();
@@ -1739,7 +1765,8 @@ function updateSummary() {
   if (booking.activityType === 'event') {
     timeStr = booking.session || '–';
   } else {
-    timeStr = (booking.rentalStart || '–') + ' saatinde kiralama';
+    const rs2 = booking.rentalStart || '–';
+    timeStr = rs2.includes('-') ? rs2.replace('-', ' – ') + ' kiralama' : rs2 + ' saatinde kiralama';
   }
   document.getElementById('sum-datetime').textContent = dateStr + ' · ' + timeStr;
   document.getElementById('sum-people').textContent = booking.people + (lang === 'tr' ? ' kişi' : lang === 'en' ? ' people' : ' чел.');
@@ -1792,29 +1819,66 @@ function updateSummary() {
 function buildRentalTimeSelect() {
   const grid = document.getElementById('rentalSlotGrid');
   if (!grid) return;
+  grid.innerHTML = '';
+
+  const slots = [
+    { id:'rslot1', ad: CONFIG.KIRALAMA_SEFER1_AD, bas: CONFIG.KIRALAMA_SEFER1_BAS, bit: CONFIG.KIRALAMA_SEFER1_BIT },
+    { id:'rslot2', ad: CONFIG.KIRALAMA_SEFER2_AD, bas: CONFIG.KIRALAMA_SEFER2_BAS, bit: CONFIG.KIRALAMA_SEFER2_BIT },
+  ];
+
+  slots.forEach(s => {
+    const val = s.bas + '-' + s.bit;
+    const card = document.createElement('div');
+    card.className = 'session-card' + (booking.rentalStart === val ? ' selected' : '');
+    card.id = s.id;
+    card.innerHTML = `<div class="sc-time">${s.bas} – ${s.bit}</div><div class="sc-label">${s.ad}</div>`;
+    card.onclick = () => selectRentalSlot(val, s.id);
+    grid.appendChild(card);
+  });
+
+  if (CONFIG.KIRALAMA_OZEL_SAAT) {
+    const card = document.createElement('div');
+    card.className = 'session-card' + (booking.rentalStart === 'custom' ? ' selected' : '');
+    card.id = 'rslot-custom';
+    card.innerHTML = `<div class="sc-time">🕐</div><div class="sc-label">Kendi Saatimi Seçeyim</div>`;
+    card.onclick = () => selectRentalSlot('custom', 'rslot-custom');
+    grid.appendChild(card);
+  }
+
+  // Özel saat dropdown'unu doldur
+  buildCustomHourSelect();
+}
+
+function buildCustomHourSelect() {
+  const sel = document.getElementById('rentalCustomHour');
+  if (!sel) return;
   const [startH, startM] = (CONFIG.RENTAL_START_HOUR || '05:00').split(':').map(Number);
   const [endH, endM]     = (CONFIG.RENTAL_END_HOUR   || '19:00').split(':').map(Number);
   const startMins = startH * 60 + startM;
   const endMins   = endH * 60 + endM;
-  grid.innerHTML = '';
-  for (let m = startMins; m < endMins; m += 60) {
+  sel.innerHTML = '';
+  for (let m = startMins; m <= endMins; m += 30) {
     const hh = String(Math.floor(m / 60)).padStart(2, '0');
     const mm = String(m % 60).padStart(2, '0');
-    const time = `${hh}:${mm}`;
-    const card = document.createElement('div');
-    card.className = 'session-card' + (booking.rentalStart === time ? ' selected' : '');
-    card.id = `rslot-${time.replace(':','')}`;
-    card.innerHTML = `<div class="sc-time">${time}</div>`;
-    card.onclick = () => selectRentalSlot(time);
-    grid.appendChild(card);
+    const opt = document.createElement('option');
+    opt.value = `${hh}:${mm}`;
+    opt.textContent = `${hh}:${mm}`;
+    sel.appendChild(opt);
   }
+  if (sel.options.length) booking.rentalStart = sel.options[0].value;
 }
 
-function selectRentalSlot(time) {
-  booking.rentalStart = time;
+function selectRentalSlot(val, cardId) {
+  booking.rentalStart = val === 'custom' ? (document.getElementById('rentalCustomHour')?.value || '09:00') : val;
   document.querySelectorAll('#rentalSlotGrid .session-card').forEach(c => c.classList.remove('selected'));
-  const el = document.getElementById('rslot-' + time.replace(':',''));
+  const el = document.getElementById(cardId);
   if (el) el.classList.add('selected');
+  const customBox = document.getElementById('rentalCustomTimeBox');
+  if (customBox) customBox.style.display = val === 'custom' ? 'block' : 'none';
+  if (val === 'custom') {
+    const sel = document.getElementById('rentalCustomHour');
+    if (sel) { sel.onchange = () => { booking.rentalStart = sel.value; }; }
+  }
 }
 
 // ============================================

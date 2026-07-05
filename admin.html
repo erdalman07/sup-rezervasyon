@@ -577,6 +577,50 @@ input:checked + .slider:before { transform: translateX(20px); }
               </select>
             </div>
 
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label" style="font-size:15px;color:var(--ocean)">🚣 Kiralama Sefer Ayarları</label>
+              <div class="form-hint">Rezervasyon sayfasındaki kiralama saat kartlarını buradan ayarlayın.</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">1. Sefer — Adı</label>
+              <input type="text" class="form-input" id="s-sefer1ad" placeholder="1. Sefer">
+            </div>
+            <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div>
+                <label class="form-label" style="font-size:12px">Başlangıç</label>
+                <input type="time" class="form-input" id="s-sefer1bas" value="05:00">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px">Bitiş</label>
+                <input type="time" class="form-input" id="s-sefer1bit" value="07:00">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">2. Sefer — Adı</label>
+              <input type="text" class="form-input" id="s-sefer2ad" placeholder="2. Sefer">
+            </div>
+            <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+              <div>
+                <label class="form-label" style="font-size:12px">Başlangıç</label>
+                <input type="time" class="form-input" id="s-sefer2bas" value="07:00">
+              </div>
+              <div>
+                <label class="form-label" style="font-size:12px">Bitiş</label>
+                <input type="time" class="form-input" id="s-sefer2bit" value="09:00">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Kendi Saatini Seç Seçeneği</label>
+              <div class="form-hint">Müşteri kendi saatini belirleyebilsin mi?</div>
+              <select class="form-select" id="s-ozelSaat">
+                <option value="true">✅ Açık</option>
+                <option value="false">🔴 Kapalı</option>
+              </select>
+            </div>
+
             <div class="form-group">
               <label class="form-label">Sezon Durumu</label>
               <div class="form-hint">Sezon kapalıysa rezervasyon alınmaz</div>
@@ -1063,6 +1107,13 @@ async function loadSettingsForm() {
       // Entegrasyon alanları
       if (data.sheets_url)         document.getElementById('s-sheetsUrl').value = data.sheets_url;
       if (data.weather_api_key)    document.getElementById('s-weatherKey').value = data.weather_api_key;
+      if (data.kiralama_sefer1_ad)       document.getElementById('s-sefer1ad').value = data.kiralama_sefer1_ad;
+      if (data.kiralama_sefer1_baslangic) document.getElementById('s-sefer1bas').value = data.kiralama_sefer1_baslangic;
+      if (data.kiralama_sefer1_bitis)    document.getElementById('s-sefer1bit').value = data.kiralama_sefer1_bitis;
+      if (data.kiralama_sefer2_ad)       document.getElementById('s-sefer2ad').value = data.kiralama_sefer2_ad;
+      if (data.kiralama_sefer2_baslangic) document.getElementById('s-sefer2bas').value = data.kiralama_sefer2_baslangic;
+      if (data.kiralama_sefer2_bitis)    document.getElementById('s-sefer2bit').value = data.kiralama_sefer2_bitis;
+      document.getElementById('s-ozelSaat').value = data.kiralama_ozel_saat === false ? 'false' : 'true';
       // Şifreyi gösterme, sadece placeholder güncelle
       if (data.admin_password)     document.getElementById('s-adminPass').placeholder = '(Mevcut şifre kayıtlı — değiştirmek için yaz)';
     }
@@ -1087,6 +1138,13 @@ async function saveSettings() {
     sezon_durumu:      document.getElementById('s-seasonActive').value,
     sheets_url:        document.getElementById('s-sheetsUrl').value.trim(),
     weather_api_key:   document.getElementById('s-weatherKey').value.trim(),
+    kiralama_sefer1_ad:        document.getElementById('s-sefer1ad').value.trim() || '1. Sefer',
+    kiralama_sefer1_baslangic: document.getElementById('s-sefer1bas').value || '05:00',
+    kiralama_sefer1_bitis:     document.getElementById('s-sefer1bit').value || '07:00',
+    kiralama_sefer2_ad:        document.getElementById('s-sefer2ad').value.trim() || '2. Sefer',
+    kiralama_sefer2_baslangic: document.getElementById('s-sefer2bas').value || '07:00',
+    kiralama_sefer2_bitis:     document.getElementById('s-sefer2bit').value || '09:00',
+    kiralama_ozel_saat:        document.getElementById('s-ozelSaat').value === 'true',
     updated_at:        new Date().toISOString(),
   };
   // Şifre değişikliği sadece doluysa uygula
