@@ -497,16 +497,36 @@ input:checked + .slider:before { transform: translateX(20px); }
               <input type="text" class="form-input" id="s-accountName" placeholder="Ad Soyad">
             </div>
 
-            <div class="form-group">
-              <label class="form-label">Etkinlik Fiyatı (Kişi Başı ₺)</label>
-              <div class="form-hint">Etkinliğe katılım ücreti</div>
-              <input type="number" class="form-input" id="s-eventPrice" placeholder="500">
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label" style="font-size:15px;color:var(--ocean)">📅 Etkinlik Fiyatları (Kişi Başı ₺)</label>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Kiralama Fiyatı (Saatlik ₺)</label>
-              <div class="form-hint">Board kiralama saatlik ücreti</div>
-              <input type="number" class="form-input" id="s-rentalPrice" placeholder="300">
+              <label class="form-label">Hafta İçi (Pzt–Cum)</label>
+              <div class="form-hint">Etkinlik hafta içi fiyatı</div>
+              <input type="number" class="form-input" id="s-eventPriceWeekday" placeholder="500">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Hafta Sonu (Cmt–Paz)</label>
+              <div class="form-hint">Etkinlik hafta sonu fiyatı</div>
+              <input type="number" class="form-input" id="s-eventPriceWeekend" placeholder="700">
+            </div>
+
+            <div class="form-group" style="grid-column:1/-1">
+              <label class="form-label" style="font-size:15px;color:var(--ocean)">🏄 Kiralama Fiyatları (Saatlik ₺)</label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Hafta İçi (Pzt–Cum)</label>
+              <div class="form-hint">Kiralama hafta içi saatlik ücreti</div>
+              <input type="number" class="form-input" id="s-rentalPriceWeekday" placeholder="300">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Hafta Sonu (Cmt–Paz)</label>
+              <div class="form-hint">Kiralama hafta sonu saatlik ücreti</div>
+              <input type="number" class="form-input" id="s-rentalPriceWeekend" placeholder="400">
             </div>
 
             <div class="form-group">
@@ -1022,8 +1042,10 @@ async function loadSettingsForm() {
     if (data) {
       if (data.iban)               document.getElementById('s-iban').value = data.iban;
       if (data.hesap_adi)          document.getElementById('s-accountName').value = data.hesap_adi;
-      if (data.etkinlik_fiyati)    document.getElementById('s-eventPrice').value = data.etkinlik_fiyati;
-      if (data.kiralama_fiyati)    document.getElementById('s-rentalPrice').value = data.kiralama_fiyati;
+      if (data.etkinlik_fiyati_hafta_ici)  document.getElementById('s-eventPriceWeekday').value = data.etkinlik_fiyati_hafta_ici;
+      if (data.etkinlik_fiyati_haftasonu) document.getElementById('s-eventPriceWeekend').value = data.etkinlik_fiyati_haftasonu;
+      if (data.kiralama_fiyati_hafta_ici)  document.getElementById('s-rentalPriceWeekday').value = data.kiralama_fiyati_hafta_ici;
+      if (data.kiralama_fiyati_haftasonu) document.getElementById('s-rentalPriceWeekend').value = data.kiralama_fiyati_haftasonu;
       if (data.kapora_yuzdesi)     document.getElementById('s-depositPercent').value = data.kapora_yuzdesi;
       if (data.max_kisi)           document.getElementById('s-maxPeople').value = data.max_kisi;
       if (data.admin_email)        document.getElementById('s-adminEmail').value = data.admin_email;
@@ -1054,8 +1076,10 @@ async function saveSettings() {
   const updates = {
     iban:              document.getElementById('s-iban').value,
     hesap_adi:         document.getElementById('s-accountName').value,
-    etkinlik_fiyati:   parseInt(document.getElementById('s-eventPrice').value) || 500,
-    kiralama_fiyati:   parseInt(document.getElementById('s-rentalPrice').value) || 500,
+    etkinlik_fiyati_hafta_ici:  parseInt(document.getElementById('s-eventPriceWeekday').value) || 500,
+    etkinlik_fiyati_haftasonu: parseInt(document.getElementById('s-eventPriceWeekend').value) || 700,
+    kiralama_fiyati_hafta_ici:  parseInt(document.getElementById('s-rentalPriceWeekday').value) || 300,
+    kiralama_fiyati_haftasonu: parseInt(document.getElementById('s-rentalPriceWeekend').value) || 400,
     kapora_yuzdesi:    parseInt(document.getElementById('s-depositPercent').value) || 50,
     max_kisi:          parseInt(document.getElementById('s-maxPeople').value) || 10,
     admin_email:       document.getElementById('s-adminEmail').value,

@@ -1324,8 +1324,10 @@ const CONFIG = {
   SHEETS_URL: '',                 // Google Sheets Apps Script URL — Supabase'den yüklenir
   IBAN: 'TR00 0000 0000 0000 0000 0000 00',
   ACCOUNT_NAME: 'Ad Soyad',
-  EVENT_PRICE_PER_PERSON: 500,
-  RENTAL_PRICE_PER_HOUR: 500,
+  EVENT_PRICE_WEEKDAY: 500,
+  EVENT_PRICE_WEEKEND: 700,
+  RENTAL_PRICE_WEEKDAY: 300,
+  RENTAL_PRICE_WEEKEND: 400,
   DEPOSIT_PERCENT: 50,
   MAX_PEOPLE: 10,
   RENTAL_START_HOUR: '05:00',
@@ -1351,16 +1353,52 @@ function setLang(lang) {
 // ============================================
 // PRICE DISPLAYS
 // ============================================
+function isWeekend(date) {
+  if (!date) return false;
+  const day = date.getDay(); // 0=Paz, 6=Cmt
+  return day === 0 || day === 6;
+}
+
+function getEventPrice() {
+  return isWeekend(booking.date) ? CONFIG.EVENT_PRICE_WEEKEND : CONFIG.EVENT_PRICE_WEEKDAY;
+}
+
+function getRentalPrice() {
+  return isWeekend(booking.date) ? CONFIG.RENTAL_PRICE_WEEKEND : CONFIG.RENTAL_PRICE_WEEKDAY;
+}
+
 function updatePriceDisplays() {
-  const labels = {
-    tr: { event: `👤 Kişi başı: ₺${CONFIG.EVENT_PRICE_PER_PERSON}`, rental: `👤 Kişi başı: ₺${CONFIG.RENTAL_PRICE_PER_HOUR}` },
-    en: { event: `👤 Per person: ₺${CONFIG.EVENT_PRICE_PER_PERSON}`, rental: `👤 Per person: ₺${CONFIG.RENTAL_PRICE_PER_HOUR}` },
-    ru: { event: `👤 За человека: ₺${CONFIG.EVENT_PRICE_PER_PERSON}`, rental: `👤 За человека: ₺${CONFIG.RENTAL_PRICE_PER_HOUR}` },
-  };
-  const l = labels[currentLang];
-  document.getElementById('event-price-display').textContent = l.event;
-  document.getElementById('rental-price-display').textContent = l.rental;
-  // Saatleri de güncelle
+  const wd = CONFIG.EVENT_PRICE_WEEKDAY;
+  const we = CONFIG.EVENT_PRICE_WEEKEND;
+  const rd = CONFIG.RENTAL_PRICE_WEEKDAY;
+  const re = CONFIG.RENTAL_PRICE_WEEKEND;
+  const hasDate = !!booking.date;
+  const weekend = isWeekend(booking.date);
+
+  const lbl = {
+    tr: { wi: 'Hafta İçi', hs: 'Hafta Sonu' },
+    en: { wi: 'Weekday',   hs: 'Weekend' },
+    ru: { wi: 'Будни',     hs: 'Выходные' },
+  }[currentLang] || { wi: 'Hafta İçi', hs: 'Hafta Sonu' };
+
+  function priceHtml(wdPrice, wePrice) {
+    if (hasDate) {
+      // Tarih seçilmişse aktif fiyatı vurgula
+      const activeStyle  = 'font-weight:700;color:var(--ocean)';
+      const passiveStyle = 'opacity:0.45;text-decoration:line-through;font-size:11px';
+      const wdHtml = `<span style="${weekend ? passiveStyle : activeStyle}">👤 ${lbl.wi}: ₺${wdPrice}</span>`;
+      const weHtml = `<span style="${weekend ? activeStyle : passiveStyle}">👤 ${lbl.hs}: ₺${wePrice}</span>`;
+      return `<span style="display:flex;flex-direction:column;gap:2px;align-items:center">${wdHtml}${weHtml}</span>`;
+    }
+    // Tarih seçilmemişse ikisini yan yana göster
+    return `<span style="display:flex;flex-direction:column;gap:2px;align-items:center">` +
+      `<span>👤 ${lbl.wi}: ₺${wdPrice}</span>` +
+      `<span>👤 ${lbl.hs}: ₺${wePrice}</span>` +
+      `</span>`;
+  }
+
+  document.getElementById('event-price-display').innerHTML  = priceHtml(wd, we);
+  document.getElementById('rental-price-display').innerHTML = priceHtml(rd, re);
   buildRentalTimeSelect();
 }
 
@@ -1376,8 +1414,10 @@ async function loadConfig() {
     if (data) {
       if (data.iban)               CONFIG.IBAN = data.iban;
       if (data.hesap_adi)          CONFIG.ACCOUNT_NAME = data.hesap_adi;
-      if (data.etkinlik_fiyati)    CONFIG.EVENT_PRICE_PER_PERSON = Number(data.etkinlik_fiyati);
-      if (data.kiralama_fiyati)    CONFIG.RENTAL_PRICE_PER_HOUR  = Number(data.kiralama_fiyati);
+      if (data.etkinlik_fiyati_hafta_ici)  CONFIG.EVENT_PRICE_WEEKDAY  = Number(data.etkinlik_fiyati_hafta_ici);
+      if (data.etkinlik_fiyati_haftasonu) CONFIG.EVENT_PRICE_WEEKEND  = Number(data.etkinlik_fiyati_haftasonu);
+      if (data.kiralama_fiyati_hafta_ici)  CONFIG.RENTAL_PRICE_WEEKDAY = Number(data.kiralama_fiyati_hafta_ici);
+      if (data.kiralama_fiyati_haftasonu) CONFIG.RENTAL_PRICE_WEEKEND = Number(data.kiralama_fiyati_haftasonu);
       if (data.kapora_yuzdesi)     CONFIG.DEPOSIT_PERCENT  = Number(data.kapora_yuzdesi);
       if (data.max_kisi)           CONFIG.MAX_PEOPLE       = Number(data.max_kisi);
       if (data.kiralama_baslangic) CONFIG.RENTAL_START_HOUR = data.kiralama_baslangic;
@@ -1556,6 +1596,7 @@ function renderCalendar() {
 function selectDate(date) {
   booking.date = date;
   renderCalendar();
+  updatePriceDisplays(); // Tarih değişince hafta içi/sonu fiyatını güncelle
 }
 
 // Update session/rental displays when activity changes
@@ -1666,9 +1707,9 @@ async function submitAndGoStep5() {
 // ============================================
 function calculateTotal() {
   if (booking.activityType === 'event') {
-    return CONFIG.EVENT_PRICE_PER_PERSON * booking.people;
+    return getEventPrice() * booking.people;
   } else {
-    return CONFIG.RENTAL_PRICE_PER_HOUR * booking.rentalDuration * booking.people;
+    return getRentalPrice() * booking.rentalDuration * booking.people;
   }
 }
 
