@@ -475,6 +475,9 @@ body {
 .cal-day.today { font-weight: 800; color: var(--ocean); }
 .cal-day.disabled { color: #ccc; cursor: default; }
 .cal-day.empty { cursor: default; }
+.cal-day.weekend:not(.disabled):not(.selected) { color: #e05c2a; background: #fff5f0; }
+.cal-day.weekend:not(.disabled):not(.selected):hover { background: #ffe4d6; }
+.cal-day.weekday:not(.disabled):not(.selected) { color: var(--dark); }
 
 /* Location Card */
 .location-card {
@@ -1567,7 +1570,9 @@ function renderCalendar() {
   for (let d = 1; d <= days; d++) {
     const el = document.createElement('div');
     const date = new Date(y, m, d);
-    el.className = 'cal-day';
+    const dayOfWeek = date.getDay(); // 0=Paz, 6=Cmt
+    const isWknd = dayOfWeek === 0 || dayOfWeek === 6;
+    el.className = 'cal-day ' + (isWknd ? 'weekend' : 'weekday');
     el.textContent = d;
     const isToday = date.getTime() === now.getTime();
     const isPast = date < now;
