@@ -1062,12 +1062,7 @@ footer a { color: var(--foam); text-decoration: none; }
 
           <!-- Rental time (shown only for rental) -->
           <div id="rental-time-selection" style="margin-top:24px; display:none;">
-            <div class="form-label" data-tr="Başlangıç Saati" data-en="Start Time" data-ru="Время начала">Başlangıç Saati</div>
-            <select class="form-select" id="rentalStartTime" style="max-width:200px;">
-              <!-- JS tarafından dolduruluyor -->
-            </select>
-            <div style="font-size:12px; color:#888; margin-top:6px;" data-tr="⏱️ Müsait saatler: 05:00 – 19:00" data-en="⏱️ Available hours: 05:00 – 19:00" data-ru="⏱️ Доступное время: 05:00 – 19:00">⏱️ Müsait saatler: 05:00 – 19:00</div>
-            <div class="form-label" style="margin-top:16px;" data-tr="Kiralama Süresi" data-en="Rental Duration" data-ru="Продолжительность аренды">Kiralama Süresi</div>
+            <div class="form-label" data-tr="Kiralama Süresi" data-en="Rental Duration" data-ru="Продолжительность аренды">Kiralama Süresi</div>
             <select class="form-select" id="rentalDuration" style="max-width:200px;">
               <option value="1">1 Saat / 1 Hour</option>
               <option value="2">2 Saat / 2 Hours</option>
@@ -1630,7 +1625,7 @@ async function submitAndGoStep5() {
   const dateStr = booking.date ? booking.date.toLocaleDateString('tr-TR') : '';
   let timeStr = '';
   if (booking.activityType === 'event') timeStr = booking.session;
-  else timeStr = booking.rentalStart + ' (' + booking.rentalDuration + ' saat)';
+  else timeStr = booking.rentalDuration + ' saat kiralama';
 
   const total = calculateTotal();
   const deposit = Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
@@ -1740,7 +1735,7 @@ function updateSummary() {
   } else {
     booking.rentalStart = document.getElementById('rentalStartTime')?.value || '05:00';
     booking.rentalDuration = parseInt(document.getElementById('rentalDuration')?.value || 1);
-    timeStr = booking.rentalStart + ' (' + booking.rentalDuration + ' saat)';
+    timeStr = booking.rentalDuration + ' saat kiralama';
   }
   document.getElementById('sum-datetime').textContent = dateStr + ' · ' + timeStr;
   document.getElementById('sum-people').textContent = booking.people + (lang === 'tr' ? ' kişi' : lang === 'en' ? ' people' : ' чел.');
@@ -1809,7 +1804,7 @@ function buildRentalTimeSelect() {
 function getCalendarDates() {
   if (!booking.date) return null;
   const d = booking.date;
-  let timeStr = booking.activityType === 'event' ? (booking.session || '05:00') : (booking.rentalStart || '05:00');
+  const timeStr = booking.activityType === 'event' ? (booking.session || '09:00') : '09:00';
   const [h, mi] = timeStr.split(':').map(Number);
   const start = new Date(d);
   start.setHours(h, mi, 0, 0);
