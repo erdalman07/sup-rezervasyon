@@ -1659,7 +1659,8 @@ async function submitAndGoStep5() {
     timeStr = rs.includes('-') ? rs.replace('-', ' – ') + ' kiralama' : rs + ' saatinde kiralama';
   }
 
-  const total = booking.activityType === 'rental' ? 0 : calculateTotal();
+  // Kiralama için de fiyat hesapla (formda gösterilmez ama Excel/Supabase'e yazılır)
+  const total = calculateTotal();
   const deposit = booking.activityType === 'rental' ? 0 : Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
 
   // Rezervasyon numarası oluştur
@@ -1736,7 +1737,8 @@ function calculateTotal() {
   if (booking.activityType === 'event') {
     return getEventPrice() * booking.people;
   } else {
-    return getRentalPrice() * booking.rentalDuration * booking.people;
+    // Kiralama: kişi başı ücret (süre formda yok, düz kişi başı)
+    return getRentalPrice() * booking.people;
   }
 }
 
