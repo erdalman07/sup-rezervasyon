@@ -77,6 +77,7 @@ function doPost(e) {
 
     // Son satırı biraz formatlı yap
     const lastRow = sheet.getLastRow();
+    sheet.getRange(lastRow, 10).setNumberFormat('@');    // Telefon → metin (+ işareti formül sayılmasın)
     sheet.getRange(lastRow, 13, 1, 2).setNumberFormat('#,##0 "₺"');
 
     return response({ success: true, message: 'Rezervasyon eklendi', rezNo: data.rezNo });

@@ -348,26 +348,68 @@ body {
    FEATURES GRID
    ============================================ */
 .features {
-  background: white;
-  padding: 20px 0 60px;
+  background: linear-gradient(180deg, #f0f8ff 0%, #ffffff 100%);
+  padding: 60px 0 80px;
+  position: relative;
+  overflow: hidden;
+}
+.features::before {
+  content: '';
+  position: absolute;
+  top: -80px; right: -80px;
+  width: 320px; height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,180,216,0.10) 0%, transparent 70%);
+  pointer-events: none;
 }
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  margin-top: 8px;
 }
 .feature-card {
-  background: linear-gradient(135deg, #f8faff 0%, #e8f4ff 100%);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 24px 20px;
-  text-align: center;
-  transition: all 0.3s;
+  background: white;
+  border: 1.5px solid rgba(0,119,182,0.12);
+  border-radius: 20px;
+  padding: 28px 22px 24px;
+  text-align: left;
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+  position: relative;
+  overflow: hidden;
 }
-.feature-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
-.feature-icon { font-size: 36px; margin-bottom: 12px; }
-.feature-title { font-size: 14px; font-weight: 700; color: var(--dark); margin-bottom: 6px; }
-.feature-desc { font-size: 12px; color: #666; line-height: 1.5; }
+.feature-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: linear-gradient(135deg, rgba(0,119,182,0.04) 0%, rgba(0,180,216,0.04) 100%);
+}
+.feature-card:hover { transform: translateY(-6px); box-shadow: 0 12px 40px rgba(0,119,182,0.14); border-color: rgba(0,119,182,0.3); }
+.feature-card:hover::after { opacity: 1; }
+.feature-icon-wrap {
+  width: 52px; height: 52px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #e8f4ff 0%, #d0eaff 100%);
+}
+.feature-card.fc-orange .feature-icon-wrap { background: linear-gradient(135deg, #fff1ea 0%, #ffddd0 100%); }
+.feature-card.fc-green .feature-icon-wrap  { background: linear-gradient(135deg, #e6faf3 0%, #ccf4e3 100%); }
+.feature-card.fc-gold .feature-icon-wrap   { background: linear-gradient(135deg, #fff8e6 0%, #ffecc0 100%); }
+.feature-card.fc-teal .feature-icon-wrap   { background: linear-gradient(135deg, #e0faff 0%, #c0f4ff 100%); }
+.feature-card.fc-purple .feature-icon-wrap { background: linear-gradient(135deg, #f0eaff 0%, #ddd0ff 100%); }
+.feature-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--dark);
+  margin-bottom: 6px;
+  letter-spacing: -0.2px;
+}
+.feature-desc { font-size: 13px; color: #5a6a8a; line-height: 1.6; }
 
 /* ============================================
    BOOKING FORM
@@ -696,7 +738,13 @@ footer a { color: var(--foam); text-decoration: none; }
   .container { padding: 0 16px; }
   .section-header { padding-top: 48px; margin-bottom: 28px; }
   .features { padding-bottom: 40px; }
+  .features-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
   .map-embed { height: 220px; }
+}
+
+@media (max-width: 480px) {
+  .features-grid { grid-template-columns: 1fr; gap: 12px; }
+  .feature-card { padding: 20px 16px; }
 }
 
 /* ============================================
@@ -929,39 +977,40 @@ footer a { color: var(--foam); text-decoration: none; }
 <section class="features">
   <div class="container">
     <div class="section-header">
-      <div class="section-tag" data-tr="BİZİMLEDEN NE BEKLEYECEKLER" data-en="WHAT WE OFFER" data-ru="ЧТО МЫ ПРЕДЛАГАЕМ">BİZİMDEN NE BEKLEYECEKLER</div>
-      <h2 data-tr="Unutulmaz Bir Deneyim" data-en="An Unforgettable Experience" data-ru="Незабываемый опыт">Unutulmaz Bir Deneyim</h2>
+      <div class="section-tag" data-tr="AKTİVİTELERİMİZ" data-en="OUR ACTIVITIES" data-ru="НАШИ АКТИВНОСТИ">AKTİVİTELERİMİZ</div>
+      <h2 data-tr="Sizleri Neler Bekliyor?" data-en="What Awaits You?" data-ru="Что вас ждёт?">Sizleri Neler Bekliyor?</h2>
+      <p data-tr="Antalya'nın eşsiz denizinde SUP Board ile unutulmaz anlar yaşayın." data-en="Experience unforgettable moments with SUP Board in the unique sea of Antalya." data-ru="Незабываемые моменты с SUP доской в уникальном море Антальи.">Antalya'nın eşsiz denizinde SUP Board ile unutulmaz anlar yaşayın.</p>
     </div>
     <div class="features-grid">
       <div class="feature-card">
-        <div class="feature-icon">🏄‍♂️</div>
-        <div class="feature-title" data-tr="SUP Dersleri" data-en="SUP Lessons" data-ru="Уроки SUP">SUP Dersleri</div>
-        <div class="feature-desc" data-tr="Deneyimsizler için eğitmen eşliğinde profesyonel dersler" data-en="Professional lessons with an instructor for beginners" data-ru="Профессиональные уроки с инструктором для новичков">Deneyimsizler için eğitmen eşliğinde profesyonel dersler</div>
+        <div class="feature-icon-wrap">🏄‍♂️</div>
+        <div class="feature-title" data-tr="SUP Etkinliği" data-en="SUP Event" data-ru="SUP Мероприятие">SUP Etkinliği</div>
+        <div class="feature-desc" data-tr="Rehber eşliğinde grup turları ve koy keşifleri. Antalya'nın saklı güzelliklerini suya bakarak keşfedin." data-en="Guided group tours and cove explorations. Discover Antalya's hidden gems from the water." data-ru="Групповые туры с гидом по скрытым бухтам Антальи.">Rehber eşliğinde grup turları ve koy keşifleri. Antalya'nın saklı güzelliklerini suya bakarak keşfedin.</div>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">🌅</div>
-        <div class="feature-title" data-tr="Koy Turu" data-en="Cove Tour" data-ru="Тур по бухтам">Koy Turu</div>
-        <div class="feature-desc" data-tr="Antalya'nın saklı koylarını ve mağaralarını keşfedin" data-en="Discover Antalya's hidden coves and caves" data-ru="Откройте для себя скрытые бухты и пещеры Антальи">Antalya'nın saklı koylarını ve mağaralarını keşfedin</div>
+      <div class="feature-card fc-orange">
+        <div class="feature-icon-wrap">🚣</div>
+        <div class="feature-title" data-tr="SUP Board Kiralama" data-en="SUP Board Rental" data-ru="Аренда SUP доски">SUP Board Kiralama</div>
+        <div class="feature-desc" data-tr="Tecrübeli SUPçular için serbest kiralama. Kendi temponuzda, istediğiniz saatte denize açılın." data-en="Free rental for experienced paddlers. Hit the water at your own pace and time." data-ru="Свободная аренда для опытных. Выходите в море в удобное время.">Tecrübeli SUPçular için serbest kiralama. Kendi temponuzda, istediğiniz saatte denize açılın.</div>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">🏊</div>
+      <div class="feature-card fc-green">
+        <div class="feature-icon-wrap">🦺</div>
+        <div class="feature-title" data-tr="Tam Donanım Dahil" data-en="Full Equipment Included" data-ru="Полная экипировка включена">Tam Donanım Dahil</div>
+        <div class="feature-desc" data-tr="Can yeleği, su geçirmez çanta ve telefon kılıfı her kiralama ve etkinliğe dahildir." data-en="Life jacket, waterproof bag and phone case included in every rental and event." data-ru="Жилет, герметичная сумка и чехол для телефона включены.">Can yeleği, su geçirmez çanta ve telefon kılıfı her kiralama ve etkinliğe dahildir.</div>
+      </div>
+      <div class="feature-card fc-gold">
+        <div class="feature-icon-wrap">🌅</div>
+        <div class="feature-title" data-tr="Gün Doğumu Turu" data-en="Sunrise Tour" data-ru="Тур на рассвете">Gün Doğumu Turu</div>
+        <div class="feature-desc" data-tr="Sabahın ilk ışıklarında denize açılın. Muhteşem gün doğumunu SUP üzerinde izleyin." data-en="Head out at first light. Watch the magnificent sunrise from your SUP board." data-ru="Выйдите в море на рассвете и наблюдайте восход солнца.">Sabahın ilk ışıklarında denize açılın. Muhteşem gün doğumunu SUP üzerinde izleyin.</div>
+      </div>
+      <div class="feature-card fc-teal">
+        <div class="feature-icon-wrap">🏊</div>
         <div class="feature-title" data-tr="Yüzme Molaları" data-en="Swimming Breaks" data-ru="Перерывы для плавания">Yüzme Molaları</div>
-        <div class="feature-desc" data-tr="Berrak denizde serinleyerek eşsiz anlar yaşayın" data-en="Experience unique moments cooling off in the crystal clear sea" data-ru="Освежитесь в кристально чистом море">Berrak denizde serinleyerek eşsiz anlar yaşayın</div>
+        <div class="feature-desc" data-tr="Berrak Akdeniz sularında serinleme molaları. SUP turu sırasında koyda yüzme keyfi." data-en="Cool off breaks in the clear Mediterranean waters. Swimming in coves during SUP tours." data-ru="Остановки для купания в чистом Средиземном море.">Berrak Akdeniz sularında serinleme molaları. SUP turu sırasında koyda yüzme keyfi.</div>
       </div>
-      <div class="feature-card">
-        <div class="feature-icon">📸</div>
+      <div class="feature-card fc-purple">
+        <div class="feature-icon-wrap">📸</div>
         <div class="feature-title" data-tr="Fotoğraf Anıları" data-en="Photo Memories" data-ru="Фотовоспоминания">Fotoğraf Anıları</div>
-        <div class="feature-desc" data-tr="Gün doğumunda muhteşem fotoğraf fırsatları" data-en="Amazing photo opportunities at sunrise" data-ru="Удивительные возможности для фото на рассвете">Gün doğumunda muhteşem fotoğraf fırsatları</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🦺</div>
-        <div class="feature-title" data-tr="Tam Güvenlik" data-en="Full Safety" data-ru="Полная безопасность">Tam Güvenlik</div>
-        <div class="feature-desc" data-tr="Can yeleği, su geçirmez çanta ve telefon kılıfı dahil" data-en="Life jacket, waterproof bag and phone case included" data-ru="Спасательный жилет, водонепроницаемая сумка включены">Can yeleği, su geçirmez çanta ve telefon kılıfı dahil</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🚣</div>
-        <div class="feature-title" data-tr="Kiralama" data-en="Board Rental" data-ru="Аренда доски">Kiralama</div>
-        <div class="feature-desc" data-tr="Deneyimliler için saatlik SUP board kiralama hizmeti" data-en="Hourly SUP board rental for experienced riders" data-ru="Почасовая аренда SUP-доски для опытных">Deneyimliler için saatlik SUP board kiralama hizmeti</div>
+        <div class="feature-desc" data-tr="Koy mağaraları ve turkuaz sularda inanılmaz fotoğraf kareleri. Sosyal medya için mükemmel anlar." data-en="Incredible photo frames in cove caves and turquoise waters. Perfect moments for social media." data-ru="Удивительные кадры в бухтах и бирюзовых водах.">Koy mağaraları ve turkuaz sularda inanılmaz fotoğraf kareleri. Sosyal medya için mükemmel anlar.</div>
       </div>
     </div>
   </div>
