@@ -1062,11 +1062,19 @@ footer a { color: var(--foam); text-decoration: none; }
 
           <!-- Rental time (shown only for rental) -->
           <div id="rental-time-selection" style="margin-top:24px; display:none;">
-            <div class="form-label" data-tr="Kiralama Süresi" data-en="Rental Duration" data-ru="Продолжительность аренды">Kiralama Süresi</div>
-            <select class="form-select" id="rentalDuration" style="max-width:200px;">
-              <option value="1">1 Saat / 1 Hour</option>
-              <option value="2">2 Saat / 2 Hours</option>
-              <option value="3">3 Saat / 3 Hours</option>
+            <div class="form-label" data-tr="Başlangıç Saati" data-en="Start Time" data-ru="Время начала">Başlangıç Saati</div>
+            <select class="form-select" id="rentalHourSelect" style="max-width:200px;">
+              <option value="07:00">07:00</option>
+              <option value="08:00">08:00</option>
+              <option value="09:00" selected>09:00</option>
+              <option value="10:00">10:00</option>
+              <option value="11:00">11:00</option>
+              <option value="12:00">12:00</option>
+              <option value="13:00">13:00</option>
+              <option value="14:00">14:00</option>
+              <option value="15:00">15:00</option>
+              <option value="16:00">16:00</option>
+              <option value="17:00">17:00</option>
             </select>
           </div>
 
@@ -1476,6 +1484,9 @@ function validateStep(n) {
     if (booking.activityType === 'event' && !booking.session) {
       showToast(currentLang === 'tr' ? 'Lütfen seans seçin' : 'Please select a session'); return false;
     }
+    if (booking.activityType === 'rental') {
+      booking.rentalStart = document.getElementById('rentalHourSelect')?.value || '09:00';
+    }
   }
   if (n === 3) {
     if (booking.activityType === 'rental') {
@@ -1619,16 +1630,16 @@ let _pendingRezId = null;
 async function submitAndGoStep5() {
   if (!validateStep(4)) return;
 
-  booking.rentalStart = document.getElementById('rentalStartTime')?.value || '09:00';
-  booking.rentalDuration = parseInt(document.getElementById('rentalDuration')?.value || 1);
-
   const dateStr = booking.date ? booking.date.toLocaleDateString('tr-TR') : '';
   let timeStr = '';
   if (booking.activityType === 'event') timeStr = booking.session;
-  else timeStr = booking.rentalDuration + ' saat kiralama';
+  else {
+    booking.rentalStart = document.getElementById('rentalHourSelect')?.value || booking.rentalStart || '09:00';
+    timeStr = booking.rentalStart + ' saatinde kiralama';
+  }
 
-  const total = calculateTotal();
-  const deposit = Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
+  const total = booking.activityType === 'rental' ? 0 : calculateTotal();
+  const deposit = booking.activityType === 'rental' ? 0 : Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
 
   // Rezervasyon numarası oluştur
   const rezNo = generateRezId();
@@ -1733,21 +1744,30 @@ function updateSummary() {
   if (booking.activityType === 'event') {
     timeStr = booking.session || '–';
   } else {
-    booking.rentalStart = document.getElementById('rentalStartTime')?.value || '05:00';
-    booking.rentalDuration = parseInt(document.getElementById('rentalDuration')?.value || 1);
-    timeStr = booking.rentalDuration + ' saat kiralama';
+    const hr = document.getElementById('rentalHourSelect')?.value || booking.rentalStart || '09:00';
+    booking.rentalStart = hr;
+    timeStr = hr + ' saatinde kiralama';
   }
   document.getElementById('sum-datetime').textContent = dateStr + ' · ' + timeStr;
   document.getElementById('sum-people').textContent = booking.people + (lang === 'tr' ? ' kişi' : lang === 'en' ? ' people' : ' чел.');
   document.getElementById('sum-name').textContent = booking.firstName + ' ' + booking.lastName;
 
-  const total = calculateTotal();
-  const deposit = Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
-  document.getElementById('sum-total').textContent = '₺' + total.toLocaleString();
-  document.getElementById('sum-deposit').textContent = '₺' + deposit.toLocaleString();
+  const isRental = booking.activityType === 'rental';
+  const total = isRental ? 0 : calculateTotal();
+  const deposit = isRental ? 0 : Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
 
-  document.getElementById('display-iban').textContent = CONFIG.IBAN;
-  document.getElementById('display-account-name').textContent = (lang === 'tr' ? 'Hesap Adı: ' : lang === 'en' ? 'Account Name: ' : 'Получатель: ') + CONFIG.ACCOUNT_NAME;
+  // Kiralama için fiyat/kapora/IBAN gizle
+  document.querySelector('.summary-row.total').style.display = isRental ? 'none' : '';
+  document.querySelector('.summary-row.deposit').style.display = isRental ? 'none' : '';
+  document.querySelector('.iban-box').style.display = isRental ? 'none' : '';
+  document.querySelector('p[data-tr*="Kapora"]') && (document.querySelector('p[data-tr*="Kapora"]').style.display = isRental ? 'none' : '');
+
+  if (!isRental) {
+    document.getElementById('sum-total').textContent = '₺' + total.toLocaleString();
+    document.getElementById('sum-deposit').textContent = '₺' + deposit.toLocaleString();
+    document.getElementById('display-iban').textContent = CONFIG.IBAN;
+    document.getElementById('display-account-name').textContent = (lang === 'tr' ? 'Hesap Adı: ' : lang === 'en' ? 'Account Name: ' : 'Получатель: ') + CONFIG.ACCOUNT_NAME;
+  }
 
   // Rezervasyon ID — Supabase'e kayıt sırasında atanan numara
   const rezEl = document.getElementById('display-rez-id');
@@ -1767,8 +1787,8 @@ function updateSummary() {
     `👥 ${booking.people} kişi\n` +
     `👤 ${booking.firstName} ${booking.lastName}\n` +
     `📞 ${booking.phone}\n` +
-    `💰 Toplam: ₺${total} | Kapora: ₺${deposit}\n\n` +
-    `Dekontu ekliyorum... ✅`
+    (isRental ? '' : `💰 Toplam: ₺${total} | Kapora: ₺${deposit}\n\n`) +
+    (isRental ? `Lütfen onaylayın! ✅` : `Dekontu ekliyorum... ✅`)
   );
   document.getElementById('whatsappLink').href = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${msg}`;
 }
@@ -1817,7 +1837,9 @@ function getCalendarDates() {
       durationH = 2;
     }
   } else if (booking.activityType === 'rental') {
-    durationH = booking.rentalDuration || 1;
+    const rh = booking.rentalStart || '09:00';
+    [startH, startM] = rh.split(':').map(Number);
+    durationH = 1;
   }
   const start = new Date(d);
   start.setHours(startH, startM, 0, 0);
