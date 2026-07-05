@@ -1661,7 +1661,7 @@ async function submitAndGoStep5() {
 
   // Kiralama için de fiyat hesapla (formda gösterilmez ama Excel/Supabase'e yazılır)
   const total = calculateTotal();
-  const deposit = booking.activityType === 'rental' ? 0 : Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
+  const deposit = Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
 
   // Rezervasyon numarası oluştur
   const rezNo = generateRezId();
