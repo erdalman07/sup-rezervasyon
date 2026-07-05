@@ -1839,7 +1839,7 @@ function showToast(msg) {
 // ============================================
 async function loadWeather() {
   const grid = document.getElementById('weatherGrid');
-  if (CONFIG.WEATHER_API_KEY === 'YOUR_OPENWEATHER_API_KEY') {
+  if (!CONFIG.WEATHER_API_KEY || CONFIG.WEATHER_API_KEY === 'YOUR_OPENWEATHER_API_KEY') {
     // Demo weather data
     const demo = [
       { day:'Bugün', icon:'☀️', temp:'28°C', desc:'Açık' },
@@ -1903,8 +1903,8 @@ function getWeatherEmoji(id) {
 // ============================================
 // INIT
 // ============================================
-document.addEventListener('DOMContentLoaded', () => {
-  loadConfig();
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadConfig();
   loadWeather();
   renderCalendar();
   updatePriceDisplays();
