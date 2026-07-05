@@ -1775,21 +1775,13 @@ function updateSummary() {
   document.getElementById('sum-name').textContent = booking.firstName + ' ' + booking.lastName;
 
   const isRental = booking.activityType === 'rental';
-  const total = isRental ? 0 : calculateTotal();
-  const deposit = isRental ? 0 : Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
+  const total = calculateTotal();
+  const deposit = Math.ceil(total * CONFIG.DEPOSIT_PERCENT / 100);
 
-  // Kiralama için fiyat/kapora/IBAN gizle
-  document.querySelector('.summary-row.total').style.display = isRental ? 'none' : '';
-  document.querySelector('.summary-row.deposit').style.display = isRental ? 'none' : '';
-  document.querySelector('.iban-box').style.display = isRental ? 'none' : '';
-  document.querySelector('p[data-tr*="Kapora"]') && (document.querySelector('p[data-tr*="Kapora"]').style.display = isRental ? 'none' : '');
-
-  if (!isRental) {
-    document.getElementById('sum-total').textContent = '₺' + total.toLocaleString();
-    document.getElementById('sum-deposit').textContent = '₺' + deposit.toLocaleString();
-    document.getElementById('display-iban').textContent = CONFIG.IBAN;
-    document.getElementById('display-account-name').textContent = (lang === 'tr' ? 'Hesap Adı: ' : lang === 'en' ? 'Account Name: ' : 'Получатель: ') + CONFIG.ACCOUNT_NAME;
-  }
+  document.getElementById('sum-total').textContent = '₺' + total.toLocaleString();
+  document.getElementById('sum-deposit').textContent = '₺' + deposit.toLocaleString();
+  document.getElementById('display-iban').textContent = CONFIG.IBAN;
+  document.getElementById('display-account-name').textContent = (lang === 'tr' ? 'Hesap Adı: ' : lang === 'en' ? 'Account Name: ' : 'Получатель: ') + CONFIG.ACCOUNT_NAME;
 
   // Rezervasyon ID — Supabase'e kayıt sırasında atanan numara
   const rezEl = document.getElementById('display-rez-id');
@@ -1809,8 +1801,8 @@ function updateSummary() {
     `👥 ${booking.people} kişi\n` +
     `👤 ${booking.firstName} ${booking.lastName}\n` +
     `📞 ${booking.phone}\n` +
-    (isRental ? '' : `💰 Toplam: ₺${total} | Kapora: ₺${deposit}\n\n`) +
-    (isRental ? `Lütfen onaylayın! ✅` : `Dekontu ekliyorum... ✅`)
+    `💰 Toplam: ₺${total} | Kapora: ₺${deposit}\n\n` +
+    `Dekontu ekliyorum... ✅`
   );
   document.getElementById('whatsappLink').href = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${msg}`;
 }

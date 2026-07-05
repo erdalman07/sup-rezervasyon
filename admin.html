@@ -425,6 +425,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <th>Toplam</th>
                 <th>Kapora</th>
                 <th>Durum</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="recent-tbody">
@@ -465,6 +466,7 @@ input:checked + .slider:before { transform: translateX(20px); }
                 <th>Kapora (₺)</th>
                 <th>Kapora Durumu</th>
                 <th>Durum</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="all-tbody">
@@ -981,9 +983,12 @@ function buildRow(r, full = false) {
 
   const depositBtn = `<button class="deposit-btn ${depositPaid?'paid':'unpaid'}" onclick="toggleDeposit('${r['Rez. No']}', ${!depositPaid})">${depositPaid?'✅ Ödendi':'⏳ Bekliyor'}</button>`;
 
+  const rezNo = r['Rez. No'] || '';
+  const delBtn = `<button onclick="deleteReservation('${rezNo}')" style="background:none;border:none;cursor:pointer;font-size:16px;padding:4px 8px;border-radius:6px;color:#e74c3c;" title="Sil">🗑️</button>`;
+
   if (!full) {
     return `<tr>
-      <td><strong>${r['Rez. No']||''}</strong></td>
+      <td><strong>${rezNo}</strong></td>
       <td>${r['Ad']||''} ${r['Soyad']||''}</td>
       <td>${r['Aktivite Tarihi']||''}<br><small style="color:#888">${r['Saat/Seans']||''}</small></td>
       <td><span class="badge badge-info">${r['Aktivite Türü']||''}</span></td>
@@ -991,11 +996,12 @@ function buildRow(r, full = false) {
       <td><strong>₺${(r['Toplam Tutar (₺)']||0).toLocaleString()}</strong></td>
       <td>${depositBtn}</td>
       <td>${statusBadge}</td>
+      <td>${delBtn}</td>
     </tr>`;
   }
 
   return `<tr>
-    <td><strong style="color:var(--ocean)">${r['Rez. No']||''}</strong></td>
+    <td><strong style="color:var(--ocean)">${rezNo}</strong></td>
     <td style="font-size:11px;color:#888">${(r['Kayıt Tarihi']||'').toString().substring(0,10)}</td>
     <td>${r['Aktivite Tarihi']||''}</td>
     <td style="font-size:12px">${r['Saat/Seans']||''}</td>
@@ -1009,6 +1015,7 @@ function buildRow(r, full = false) {
     <td>₺${(r['Kapora (₺)']||0).toLocaleString()}</td>
     <td>${depositBtn}</td>
     <td>${statusBadge}</td>
+    <td>${delBtn}</td>
   </tr>`;
 }
 
@@ -1053,6 +1060,26 @@ async function toggleDeposit(rezNo, paid) {
   } catch(e) {
     showToast('❌ Güncelleme hatası: ' + e.message);
     loadReservations(); // rollback by reloading
+  }
+}
+
+// ============================================================
+// DELETE RESERVATION
+// ============================================================
+async function deleteReservation(rezNo) {
+  if (!confirm(`"${rezNo}" numaralı rezervasyonu silmek istediğinizden emin misiniz?`)) return;
+  try {
+    const { error } = await _supabase
+      .from('rezervasyonlar')
+      .delete()
+      .eq('rez_no', rezNo);
+    if (error) throw error;
+    reservations = reservations.filter(r => r['Rez. No'] !== rezNo);
+    renderReservations();
+    updateStats();
+    showToast('🗑️ Rezervasyon silindi');
+  } catch(e) {
+    showToast('❌ Silme hatası: ' + e.message);
   }
 }
 
