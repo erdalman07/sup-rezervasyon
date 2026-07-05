@@ -1152,10 +1152,6 @@ footer a { color: var(--foam); text-decoration: none; }
             <input type="tel" class="form-input" id="phone" placeholder="+90 5XX XXX XX XX" required>
           </div>
           <div class="form-group">
-            <label class="form-label" data-tr="E-Posta Adresiniz" data-en="Email Address" data-ru="Адрес эл. почты">E-Posta Adresiniz *</label>
-            <input type="email" class="form-input" id="email" placeholder="ornek@email.com" required>
-          </div>
-          <div class="form-group">
             <label class="form-label" data-tr="Notunuz (Opsiyonel)" data-en="Note (Optional)" data-ru="Примечание (необязательно)">Notunuz (Opsiyonel)</label>
             <input type="text" class="form-input" id="note" placeholder="">
           </div>
@@ -1460,14 +1456,12 @@ function validateStep(n) {
     const f = document.getElementById('firstName').value.trim();
     const l = document.getElementById('lastName').value.trim();
     const p = document.getElementById('phone').value.trim();
-    const e = document.getElementById('email').value.trim();
     if (!f || !l) { showToast(currentLang === 'tr' ? 'Ad ve soyad gereklidir' : 'Name required'); return false; }
     if (!p) { showToast(currentLang === 'tr' ? 'Telefon numarası gereklidir' : 'Phone required'); return false; }
-    if (!e || !e.includes('@')) { showToast(currentLang === 'tr' ? 'Geçerli e-posta gereklidir' : 'Valid email required'); return false; }
     if (!document.getElementById('agreeTerms').checked) {
       showToast(currentLang === 'tr' ? 'Koşulları kabul edin' : 'Please accept terms'); return false;
     }
-    booking.firstName = f; booking.lastName = l; booking.phone = p; booking.email = e;
+    booking.firstName = f; booking.lastName = l; booking.phone = p; booking.email = '';
     booking.note = document.getElementById('note').value.trim();
   }
   return true;
