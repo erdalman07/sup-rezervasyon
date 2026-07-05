@@ -1804,13 +1804,25 @@ function buildRentalTimeSelect() {
 function getCalendarDates() {
   if (!booking.date) return null;
   const d = booking.date;
-  const timeStr = booking.activityType === 'event' ? (booking.session || '09:00') : '09:00';
-  const [h, mi] = timeStr.split(':').map(Number);
+  let startH = 9, startM = 0, durationH = 1;
+  if (booking.activityType === 'event' && booking.session) {
+    // session format: '05:00-07:00'
+    const startPart = booking.session.split('-')[0];
+    [startH, startM] = startPart.split(':').map(Number);
+    const endPart = booking.session.split('-')[1];
+    if (endPart) {
+      const [eh, em] = endPart.split(':').map(Number);
+      durationH = (eh * 60 + em - startH * 60 - startM) / 60;
+    } else {
+      durationH = 2;
+    }
+  } else if (booking.activityType === 'rental') {
+    durationH = booking.rentalDuration || 1;
+  }
   const start = new Date(d);
-  start.setHours(h, mi, 0, 0);
-  const durationH = booking.activityType === 'event' ? 2 : (booking.rentalDuration || 1);
+  start.setHours(startH, startM, 0, 0);
   const end = new Date(start);
-  end.setHours(end.getHours() + durationH);
+  end.setMinutes(end.getMinutes() + durationH * 60);
   return { start, end };
 }
 
