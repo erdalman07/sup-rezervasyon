@@ -1250,9 +1250,9 @@ footer a { color: var(--foam); text-decoration: none; }
               <span style="font-size:14px; font-weight:700; color:#b91c1c; display:flex; align-items:center; gap:8px;">
                 ⚠️ <span data-tr="Kapora Uyarısı" data-en="Deposit Warning" data-ru="Предупреждение о задатке">Kapora Uyarısı</span>
               </span>
-              <span id="kaporaArrow" style="font-size:12px; color:#b91c1c; transition:transform 0.2s;">▼</span>
+              <span id="kaporaArrow" style="font-size:13px; color:#b91c1c; transition:transform 0.3s ease; display:inline-block;">▼</span>
             </button>
-            <div id="kaporaWarningBody" style="padding:0 16px 14px; font-size:13px; color:#7f1d1d; line-height:1.7;"
+            <div id="kaporaWarningBody" class="kw-open" style="padding:0 16px 14px; font-size:13px; color:#7f1d1d; line-height:1.7; max-height:200px; opacity:1; overflow:hidden; transition:max-height 0.32s ease, opacity 0.28s ease;"
                  data-tr="Kaporanızı etkinlik veya kiralama tarihinizden önceki gün saat 22:00'a kadar göndermeniz gerekmektedir. Süresi içinde kapora gönderilmeyen rezervasyonlar iptal edilecektir."
                  data-en="You must send your deposit by 22:00 the day before your event or rental date. Reservations without a deposit within this time will be cancelled."
                  data-ru="Вы должны отправить задаток до 22:00 накануне даты мероприятия. Брони без задатка в указанный срок будут отменены.">
@@ -2043,9 +2043,18 @@ function copyIBAN() {
 function toggleKaporaWarning() {
   const body = document.getElementById('kaporaWarningBody');
   const arrow = document.getElementById('kaporaArrow');
-  const isOpen = body.style.display !== 'none';
-  body.style.display = isOpen ? 'none' : 'block';
-  arrow.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
+  const isOpen = body.classList.contains('kw-open');
+  if (isOpen) {
+    body.style.maxHeight = body.scrollHeight + 'px';
+    requestAnimationFrame(() => { body.style.maxHeight = '0'; body.style.opacity = '0'; });
+    arrow.style.transform = 'rotate(-90deg)';
+    setTimeout(() => body.classList.remove('kw-open'), 320);
+  } else {
+    body.classList.add('kw-open');
+    body.style.maxHeight = '0'; body.style.opacity = '0';
+    requestAnimationFrame(() => { body.style.maxHeight = body.scrollHeight + 'px'; body.style.opacity = '1'; });
+    arrow.style.transform = 'rotate(0deg)';
+  }
 }
 
 // ============================================
