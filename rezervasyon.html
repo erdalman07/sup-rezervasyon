@@ -1244,6 +1244,22 @@ footer a { color: var(--foam); text-decoration: none; }
             </div>
           </div>
 
+          <!-- ⚠️ KAPORA UYARISI (açılır/kapanır) -->
+          <div id="kaporaWarning" style="background:#fff5f5; border:1.5px solid #fca5a5; border-radius:14px; margin-bottom:20px; overflow:hidden;">
+            <button onclick="toggleKaporaWarning()" style="width:100%; background:none; border:none; cursor:pointer; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; text-align:left;">
+              <span style="font-size:14px; font-weight:700; color:#b91c1c; display:flex; align-items:center; gap:8px;">
+                ⚠️ <span data-tr="Kapora Uyarısı" data-en="Deposit Warning" data-ru="Предупреждение о задатке">Kapora Uyarısı</span>
+              </span>
+              <span id="kaporaArrow" style="font-size:12px; color:#b91c1c; transition:transform 0.2s;">▼</span>
+            </button>
+            <div id="kaporaWarningBody" style="padding:0 16px 14px; font-size:13px; color:#7f1d1d; line-height:1.7;"
+                 data-tr="Kaporanızı etkinlik veya kiralama tarihinizden önceki gün saat 22:00'a kadar göndermeniz gerekmektedir. Süresi içinde kapora gönderilmeyen rezervasyonlar iptal edilecektir."
+                 data-en="You must send your deposit by 22:00 the day before your event or rental date. Reservations without a deposit within this time will be cancelled."
+                 data-ru="Вы должны отправить задаток до 22:00 накануне даты мероприятия. Брони без задатка в указанный срок будут отменены.">
+              Kaporanızı etkinlik veya kiralama tarihinizden <strong>önceki gün saat 22:00'a kadar</strong> göndermeniz gerekmektedir. Süresi içinde kapora gönderilmeyen rezervasyonlar <strong>iptal edilecektir</strong>.
+            </div>
+          </div>
+
           <div class="step-title" style="font-size:16px;" data-tr="📋 Rezervasyon Özeti" data-en="📋 Booking Summary" data-ru="📋 Сводка бронирования">📋 Rezervasyon Özeti</div>
           <div style="margin-bottom:20px;"></div>
 
@@ -1303,6 +1319,29 @@ footer a { color: var(--foam); text-decoration: none; }
              class="calendar-btn" style="background:#f0fdf4; border-color:#6ee7b7; color:#065f46; margin-bottom:8px;">
             📍 <span data-tr="Konum — Konyaaltı Beachpark" data-en="Location — Konyaaltı Beachpark" data-ru="Местоположение — Konyaaltı Beachpark">Konum — Konyaaltı Beachpark</span>
           </a>
+
+          <!-- 🏄 AKSESUAR NOTU -->
+          <div style="background:#f0f9ff; border:1.5px solid #bae6fd; border-radius:14px; padding:14px 16px; margin-bottom:10px; display:flex; align-items:flex-start; gap:10px;">
+            <span style="font-size:20px; line-height:1.4;">🏄</span>
+            <div>
+              <div style="font-size:13px; font-weight:700; color:#0369a1; margin-bottom:3px;"
+                   data-tr="SUP Aksesuarı Talebi" data-en="SUP Accessory Request" data-ru="Запрос аксессуаров SUP">SUP Aksesuarı Talebi</div>
+              <div style="font-size:12px; color:#0c4a6e; line-height:1.6;"
+                   data-tr="Kılıf, su geçirmez çanta gibi ek aksesuar taleplerinizi rezervasyon numaranızı belirterek WhatsApp'tan iletebilirsiniz."
+                   data-en="You can send your requests for additional accessories such as cases and waterproof bags via WhatsApp, quoting your reservation number."
+                   data-ru="Запросы на дополнительные аксессуары (чехлы, гермосумки) отправляйте в WhatsApp, указав номер брони.">
+                Kılıf, su geçirmez çanta gibi ek aksesuar taleplerinizi rezervasyon numaranızı belirterek WhatsApp'tan iletebilirsiniz.
+              </div>
+            </div>
+          </div>
+
+          <!-- 📱 EKRAN GÖRÜNTÜSÜ HATIRLATMASI -->
+          <div style="text-align:center; padding:10px 0 4px; font-size:12px; color:#94a3b8;"
+               data-tr="📱 Rezervasyon bilgilerinizin ekran görüntüsünü almayı unutmayın."
+               data-en="📱 Don't forget to take a screenshot of your reservation details."
+               data-ru="📱 Не забудьте сделать скриншот данных вашей брони.">
+            📱 Rezervasyon bilgilerinizin ekran görüntüsünü almayı unutmayın.
+          </div>
 
           <div class="form-nav" style="justify-content:flex-start; margin-top:20px;">
             <button class="btn-back" onclick="goStep(4)" data-tr="← Düzelt" data-en="← Edit" data-ru="← Назад">← Düzelt</button>
@@ -1999,6 +2038,14 @@ function copyIBAN() {
   navigator.clipboard.writeText(CONFIG.IBAN.replace(/\s/g, '')).then(() => {
     showToast(currentLang === 'tr' ? 'IBAN kopyalandı! ✓' : currentLang === 'en' ? 'IBAN copied! ✓' : 'IBAN скопирован! ✓');
   });
+}
+
+function toggleKaporaWarning() {
+  const body = document.getElementById('kaporaWarningBody');
+  const arrow = document.getElementById('kaporaArrow');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  arrow.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
 }
 
 // ============================================
