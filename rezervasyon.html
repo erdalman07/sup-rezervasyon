@@ -1786,33 +1786,27 @@ async function submitAndGoStep5() {
     return;
   }
 
-  // 2. Google Sheets'e de yaz (opsiyonel — arka planda, hata olursa işlem durmuyor)
+  // 2. Google Sheets'e de yaz (GET parametresiyle — no-cors POST body kaybolmasın diye)
   if (CONFIG.SHEETS_URL) {
-    fetch(CONFIG.SHEETS_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      mode: 'no-cors',
-      body: JSON.stringify({
-        action:       'addReservation',
-        date:         dateStr,
-        time:         timeStr,
-        activityType: booking.activityType,
-        location:     'Konyaaltı Beachpark',
-        people:       booking.people,
-        firstName:    booking.firstName,
-        lastName:     booking.lastName,
-        phone:        booking.phone,
-        email:        booking.email,
-        note:         booking.note,
-        total:        total,
-        deposit:      deposit,
-        lang:         currentLang,
-        status:       'Bekliyor',
-        depositPaid:  'Hayır',
-        timestamp:    new Date().toISOString(),
-        rezNo:        rezNo,
-      }),
-    }).catch(e => console.warn('Sheets yazma hatası (önemsiz):', e.message));
+    const sheetsPayload = encodeURIComponent(JSON.stringify({
+      action:       'addReservation',
+      rezNo:        rezNo,
+      date:         dateStr,
+      time:         timeStr,
+      activityType: booking.activityType,
+      location:     'Konyaaltı Beachpark',
+      people:       booking.people,
+      firstName:    booking.firstName,
+      lastName:     booking.lastName,
+      phone:        booking.phone,
+      email:        booking.email,
+      note:         booking.note,
+      total:        total,
+      deposit:      deposit,
+      lang:         currentLang,
+    }));
+    fetch(CONFIG.SHEETS_URL + '?payload=' + sheetsPayload, { mode: 'no-cors' })
+      .catch(e => console.warn('Sheets yazma hatası:', e.message));
   }
 
   goStep(5);
