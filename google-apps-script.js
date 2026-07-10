@@ -4,7 +4,7 @@
 // ============================================================
 
 const SPREADSHEET_ID = '1_a02MPfXb0niSW9RAQMZ_iT_qDkOlRVU';
-const SHEET_NAME = 'WebRezervasyon';
+const SHEET_NAME = 'WebRezervasyon1';
 
 const HEADERS = [
   'Rez. No', 'Kayıt Tarihi', 'Aktivite Tarihi', 'Saat/Seans', 'Aktivite Türü',
@@ -36,30 +36,31 @@ function doGet(e) {
       const kayitTarihi = Utilities.formatDate(new Date(), 'Europe/Istanbul', 'dd.MM.yyyy HH:mm');
 
       sheet.appendRow([
-        data.rezNo        || '',
-        kayitTarihi,
-        data.date         || '',
-        data.time         || '',
-        data.activityType === 'event' ? 'Etkinlik' : 'Kiralama',
-        data.location     || 'Konyaaltı Beachpark',
-        data.people       || 1,
-        data.firstName    || '',
-        data.lastName     || '',
-        data.phone        || '',
-        data.email        || '',
-        data.note         || '',
-        data.total        || 0,
-        data.deposit      || 0,
-        'Bekliyor',
-        'Bekliyor',
-        data.lang         || 'tr',
+        data.rezNo        || '',   // 1  Rez. No
+        kayitTarihi,               // 2  Kayıt Tarihi
+        data.date         || '',   // 3  Aktivite Tarihi
+        data.time         || '',   // 4  Saat/Seans
+        data.activityType === 'event' ? 'Etkinlik' : 'Kiralama', // 5 Aktivite Türü
+        data.location     || 'Konyaaltı Beachpark', // 6 Bölge
+        data.people       || 1,    // 7  Kişi Sayısı
+        data.firstName    || '',   // 8  Ad
+        data.lastName     || '',   // 9  Soyad
+        data.phone        || '',   // 10 Telefon
+        data.note         || '',   // 11 Not
+        data.total        || 0,    // 12 Toplam Tutar (₺)
+        data.deposit      || 0,    // 13 Kapora (₺)
+        'Bekliyor',                // 14 Kapora Durumu
+        '',                        // 15 Kalan (elle doldurulur)
+        data.lang         || 'tr', // 16 Dil
+        '',                        // 17 Hesap (elle doldurulur)
       ]);
 
       const lastRow = sheet.getLastRow();
       sheet.getRange(lastRow, 10).setNumberFormat('@');
-      sheet.getRange(lastRow, 13, 1, 2).setNumberFormat('#,##0 "₺"');
+      sheet.getRange(lastRow, 12, 1, 2).setNumberFormat('#,##0 "₺"');
+      SpreadsheetApp.flush();
 
-      return response({ success: true, rezNo: data.rezNo });
+      return response({ success: true, rezNo: data.rezNo, lastRow: lastRow });
     }
 
     // Normal GET — script aktif kontrolü
