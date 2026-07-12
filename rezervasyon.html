@@ -1912,14 +1912,7 @@ function buildRentalTimeSelect() {
     grid.appendChild(card);
   });
 
-  if (CONFIG.KIRALAMA_OZEL_SAAT) {
-    const card = document.createElement('div');
-    card.className = 'session-card' + (booking.rentalStart === 'custom' ? ' selected' : '');
-    card.id = 'rslot-custom';
-    card.innerHTML = `<div class="sc-time">🕐</div><div class="sc-label">Kendi Saatimi Seçeyim</div>`;
-    card.onclick = () => selectRentalSlot('custom', 'rslot-custom');
-    grid.appendChild(card);
-  }
+  // Kendi saatini seç butonu kaldırıldı
 
   // Özel saat dropdown'unu doldur
   buildCustomHourSelect();
