@@ -1236,20 +1236,21 @@ async function saveSettings() {
 }
 
 // ============================================================
-// KAPALI GÜNLER
+// KAPALI GÜNLER  (rezervasyonlar tablosunda KAPALI- prefix ile saklanır)
 // ============================================================
 let _kapaliGunler = [];
 
 async function loadKapaliGunler() {
   try {
-    const { data, error } = await _supabase.from('ayarlar').select('kapali_gunler').eq('id', 1).single();
+    const { data, error } = await _supabase
+      .from('rezervasyonlar')
+      .select('rez_no,aktivite_tarihi,saat_seans,bolge,not_alani')
+      .eq('aktivite_turu', 'Kapalı')
+      .order('saat_seans', { ascending: true });
     if (error) throw error;
-    _kapaliGunler = Array.isArray(data.kapali_gunler) ? data.kapali_gunler : [];
-  } catch(e) {
-    _kapaliGunler = [];
-  }
+    _kapaliGunler = (data || []).filter(r => r.rez_no && r.rez_no.startsWith('KAPALI-'));
+  } catch(e) { _kapaliGunler = []; }
   renderKapaliGunler();
-  // min tarih = bugün
   const today = new Date().toISOString().split('T')[0];
   const inp = document.getElementById('kp-tarih');
   if (inp) inp.min = today;
@@ -1262,54 +1263,56 @@ function renderKapaliGunler() {
     list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px;text-align:center">Henüz kapalı gün eklenmedi.</div>';
     return;
   }
-  const tipRenk = { hepsi: '#ef4444', etkinlik: '#f59e0b', kiralama: '#0077b6' };
-  const tipAd   = { hepsi: 'Her İkisi', etkinlik: 'Etkinlik', kiralama: 'Kiralama' };
-  const sorted = [..._kapaliGunler].sort((a,b) => a.tarih.localeCompare(b.tarih));
-  list.innerHTML = sorted.map((g, i) => {
-    const orig = _kapaliGunler.indexOf(g);
-    const [y,m,d] = g.tarih.split('-');
-    const tarihTR = `${d}.${m}.${y}`;
-    const renk = tipRenk[g.tip] || '#888';
+  const tipRenk = { hepsi:'#ef4444', etkinlik:'#f59e0b', kiralama:'#0077b6' };
+  const tipAd   = { hepsi:'Her İkisi', etkinlik:'Etkinlik', kiralama:'Kiralama' };
+  list.innerHTML = _kapaliGunler.map(g => {
+    const tip  = g.bolge || 'hepsi';
+    const renk = tipRenk[tip] || '#888';
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fff">
       <div>
-        <span style="font-weight:700;font-size:15px">${tarihTR}</span>
-        <span style="margin-left:10px;background:${renk};color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px">${tipAd[g.tip]||g.tip}</span>
-        ${g.not ? `<span style="margin-left:8px;font-size:12px;color:var(--muted)">${g.not}</span>` : ''}
+        <span style="font-weight:700;font-size:15px">${g.aktivite_tarihi || ''}</span>
+        <span style="margin-left:10px;background:${renk};color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px">${tipAd[tip]||tip}</span>
+        ${g.not_alani ? `<span style="margin-left:8px;font-size:12px;color:var(--muted)">${g.not_alani}</span>` : ''}
       </div>
-      <button class="btn btn-danger btn-sm" onclick="removeKapaliGun(${_kapaliGunler.indexOf(g)})">🗑 Kaldır</button>
+      <button class="btn btn-danger btn-sm" onclick="removeKapaliGun('${g.rez_no}')">✅ Günü Aç</button>
     </div>`;
   }).join('');
 }
 
 async function addKapaliGun() {
-  const tarih = document.getElementById('kp-tarih').value;
+  const tarih = document.getElementById('kp-tarih').value; // YYYY-MM-DD
   const tip   = document.getElementById('kp-tip').value;
   const not   = document.getElementById('kp-not').value.trim();
   if (!tarih) { showToast('⚠️ Lütfen tarih seçin'); return; }
-  if (_kapaliGunler.find(g => g.tarih === tarih && g.tip === tip)) {
-    showToast('⚠️ Bu tarih zaten listede'); return;
-  }
-  _kapaliGunler.push({ tarih, tip, not });
-  await saveKapaliGunler();
-  document.getElementById('kp-tarih').value = '';
-  document.getElementById('kp-not').value = '';
-}
-
-async function removeKapaliGun(idx) {
-  if (!confirm('Bu kapalı günü kaldırmak istiyor musunuz?')) return;
-  _kapaliGunler.splice(idx, 1);
-  await saveKapaliGunler();
-}
-
-async function saveKapaliGunler() {
+  const rezNo = `KAPALI-${tarih}-${tip}`;
+  if (_kapaliGunler.find(g => g.rez_no === rezNo)) { showToast('⚠️ Bu tarih zaten kapalı'); return; }
+  const [y,m,d] = tarih.split('-');
   try {
-    const { error } = await _supabase.from('ayarlar').update({ kapali_gunler: _kapaliGunler }).eq('id', 1);
+    const { error } = await _supabase.from('rezervasyonlar').upsert({
+      rez_no: rezNo, aktivite_tarihi: `${d}.${m}.${y}`,
+      saat_seans: tarih, aktivite_turu: 'Kapalı',
+      bolge: tip, not_alani: not,
+      ad: 'Kapalı', soyad: 'Gün',
+      toplam_tutar: 0, kapora: 0,
+      rezervasyon_durumu: 'Kapalı', kapora_odendi: 'Hayır', dil: 'tr'
+    }, { onConflict: 'rez_no' });
     if (error) throw error;
-    renderKapaliGunler();
-    showToast('✅ Kapalı günler güncellendi');
-  } catch(e) {
-    showToast('❌ Kayıt hatası: ' + e.message);
-  }
+    showToast('🚫 Gün kapatıldı');
+    document.getElementById('kp-tarih').value = '';
+    document.getElementById('kp-not').value = '';
+    loadKapaliGunler();
+  } catch(e) { showToast('❌ ' + e.message); }
+}
+
+async function removeKapaliGun(rezNo) {
+  if (!confirm('Bu günü tekrar rezervasyona açmak istiyor musunuz?')) return;
+  try {
+    const { error } = await _supabase.from('rezervasyonlar')
+      .update({ aktivite_turu: 'KapaliAcildi' }).eq('rez_no', rezNo);
+    if (error) throw error;
+    showToast('✅ Gün rezervasyona açıldı');
+    loadKapaliGunler();
+  } catch(e) { showToast('❌ ' + e.message); }
 }
 
 // ============================================================

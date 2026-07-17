@@ -1531,12 +1531,25 @@ async function loadConfig() {
       if (data.kiralama_sefer2_baslangic) CONFIG.KIRALAMA_SEFER2_BAS = data.kiralama_sefer2_baslangic;
       if (data.kiralama_sefer2_bitis)     CONFIG.KIRALAMA_SEFER2_BIT = data.kiralama_sefer2_bitis;
       if (data.kiralama_ozel_saat !== undefined) CONFIG.KIRALAMA_OZEL_SAAT = data.kiralama_ozel_saat;
-      if (Array.isArray(data.kapali_gunler))    CONFIG.KAPALI_GUNLER = data.kapali_gunler;
     }
   } catch(e) {
     console.warn('Supabase ayarlar yüklenemedi, varsayılanlar kullanılıyor:', e.message);
   }
   updatePriceDisplays();
+}
+
+async function loadKapaliGunler() {
+  try {
+    const { data, error } = await _supabase
+      .from('rezervasyonlar')
+      .select('saat_seans,bolge')
+      .eq('aktivite_turu', 'Kapalı')
+      .like('rez_no', 'KAPALI-%');
+    if (error) throw error;
+    CONFIG.KAPALI_GUNLER = (data || []).map(r => ({ tarih: r.saat_seans, tip: r.bolge || 'hepsi' }));
+  } catch(e) {
+    CONFIG.KAPALI_GUNLER = [];
+  }
 }
 
 // ============================================
@@ -2144,6 +2157,7 @@ function getWeatherEmoji(id) {
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
   await loadConfig();
+  await loadKapaliGunler();
   loadWeather();
   renderCalendar();
   updatePriceDisplays();
