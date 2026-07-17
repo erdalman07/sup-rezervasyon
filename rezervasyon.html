@@ -1542,11 +1542,11 @@ async function loadKapaliGunler() {
   try {
     const { data, error } = await _supabase
       .from('rezervasyonlar')
-      .select('saat_seans,bolge')
+      .select('saat_seans,bolge,not_alani')
       .eq('aktivite_turu', 'Kapalı')
       .like('rez_no', 'KAPALI-%');
     if (error) throw error;
-    CONFIG.KAPALI_GUNLER = (data || []).map(r => ({ tarih: r.saat_seans, tip: r.bolge || 'hepsi' }));
+    CONFIG.KAPALI_GUNLER = (data || []).map(r => ({ tarih: r.saat_seans, tip: r.bolge || 'hepsi', not: r.not_alani || '' }));
   } catch(e) {
     CONFIG.KAPALI_GUNLER = [];
   }
@@ -1714,15 +1714,20 @@ function renderCalendar() {
     const isToday = date.getTime() === now.getTime();
     const isPast = date < now;
     const dateISO = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isKapali = (CONFIG.KAPALI_GUNLER || []).some(g =>
+    const kapaliGun = (CONFIG.KAPALI_GUNLER || []).find(g =>
       g.tarih === dateISO &&
       (g.tip === 'hepsi' ||
        (g.tip === 'etkinlik' && booking.activityType === 'event') ||
        (g.tip === 'kiralama' && booking.activityType === 'rental'))
     );
+    const isKapali = !!kapaliGun;
     if (isPast || isKapali) {
       el.classList.add('disabled');
-      if (isKapali) { el.style.background='#fff0f0'; el.style.color='#fca5a5'; el.title='Bu tarih rezervasyona kapalıdır'; }
+      if (isKapali) {
+        el.style.cssText += ';background:#fff0f0;color:#fca5a5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;';
+        const label = kapaliGun.not ? kapaliGun.not : '🚫 Kapalı';
+        el.innerHTML = `<span>${d}</span><span style="font-size:9px;font-weight:700;color:#ef4444;line-height:1;text-align:center;white-space:nowrap;overflow:hidden;max-width:90%">${label}</span>`;
+      }
     } else {
       if (isToday) el.classList.add('today');
       if (booking.date && booking.date.getTime() === date.getTime()) el.classList.add('selected');
