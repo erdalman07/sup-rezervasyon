@@ -352,6 +352,9 @@ input:checked + .slider:before { transform: translateX(20px); }
     <a class="nav-item" onclick="showPage('kampanyalar')" href="#">
       <span class="ni-icon">🎯</span><span>Kampanyalar</span>
     </a>
+    <a class="nav-item" onclick="showPage('kapaligunler')" href="#">
+      <span class="ni-icon">🚫</span><span>Kapalı Günler</span>
+    </a>
     <div class="nav-section">Bağlantı</div>
     <a class="nav-item" onclick="showPage('kurulum')" href="#">
       <span class="ni-icon">⚙️</span><span>Kurulum</span>
@@ -804,6 +807,44 @@ input:checked + .slider:before { transform: translateX(20px); }
       </div>
     </div>
 
+    <!-- ====== KAPALI GÜNLER ====== -->
+    <div class="page" id="page-kapaligunler">
+      <div class="card" style="max-width:700px">
+        <div class="card-title">🚫 Kapalı Günler</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:24px">Seçilen tarihte rezervasyon alınmasını engelleyin. Etkinlik, kiralama veya her ikisini ayrı ayrı kapatabilirsiniz.</p>
+
+        <!-- Ekleme formu -->
+        <div style="background:var(--light);border-radius:12px;padding:20px;margin-bottom:24px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:16px">➕ Kapalı Gün Ekle</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+            <div>
+              <label class="form-label">Tarih</label>
+              <input type="date" class="form-input" id="kp-tarih" min="">
+            </div>
+            <div>
+              <label class="form-label">Kapatılan Hizmet</label>
+              <select class="form-input" id="kp-tip">
+                <option value="hepsi">Her İkisi (Etkinlik + Kiralama)</option>
+                <option value="etkinlik">Yalnızca Etkinlik</option>
+                <option value="kiralama">Yalnızca Kiralama</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-bottom:14px">
+            <label class="form-label">Not (isteğe bağlı)</label>
+            <input type="text" class="form-input" id="kp-not" placeholder="ör. Bakım günü, Özel etkinlik...">
+          </div>
+          <button class="btn btn-primary" onclick="addKapaliGun()">🚫 Günü Kapat</button>
+        </div>
+
+        <!-- Liste -->
+        <div style="font-weight:700;font-size:14px;margin-bottom:12px">📅 Kapalı Günler Listesi</div>
+        <div id="kapaliList">
+          <div style="color:var(--muted);font-size:13px;padding:16px;text-align:center">Henüz kapalı gün eklenmedi.</div>
+        </div>
+      </div>
+    </div>
+
   </div><!-- /page-content -->
 </main>
 
@@ -887,6 +928,7 @@ const pageTitles = {
   rezervasyonlar: '📋 Tüm Rezervasyonlar',
   fiyatlar: '💰 Fiyat & Ayarlar',
   kampanyalar: '🎯 Kampanyalar',
+  kapaligunler: '🚫 Kapalı Günler',
   kurulum: '⚙️ Kurulum'
 };
 
@@ -899,6 +941,7 @@ function showPage(name) {
 
   if (name === 'dashboard' || name === 'rezervasyonlar') loadReservations();
   if (name === 'fiyatlar') loadSettingsForm();
+  if (name === 'kapaligunler') loadKapaliGunler();
   // Auto-close sidebar on mobile after navigation
   if (window.innerWidth <= 768) {
     const sidebar = document.querySelector('.sidebar');
@@ -1187,6 +1230,83 @@ async function saveSettings() {
       .eq('id', 1);
     if (error) throw error;
     showToast('✅ Ayarlar kaydedildi!');
+  } catch(e) {
+    showToast('❌ Kayıt hatası: ' + e.message);
+  }
+}
+
+// ============================================================
+// KAPALI GÜNLER
+// ============================================================
+let _kapaliGunler = [];
+
+async function loadKapaliGunler() {
+  try {
+    const { data, error } = await _supabase.from('ayarlar').select('kapali_gunler').eq('id', 1).single();
+    if (error) throw error;
+    _kapaliGunler = Array.isArray(data.kapali_gunler) ? data.kapali_gunler : [];
+  } catch(e) {
+    _kapaliGunler = [];
+  }
+  renderKapaliGunler();
+  // min tarih = bugün
+  const today = new Date().toISOString().split('T')[0];
+  const inp = document.getElementById('kp-tarih');
+  if (inp) inp.min = today;
+}
+
+function renderKapaliGunler() {
+  const list = document.getElementById('kapaliList');
+  if (!list) return;
+  if (!_kapaliGunler.length) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:16px;text-align:center">Henüz kapalı gün eklenmedi.</div>';
+    return;
+  }
+  const tipRenk = { hepsi: '#ef4444', etkinlik: '#f59e0b', kiralama: '#0077b6' };
+  const tipAd   = { hepsi: 'Her İkisi', etkinlik: 'Etkinlik', kiralama: 'Kiralama' };
+  const sorted = [..._kapaliGunler].sort((a,b) => a.tarih.localeCompare(b.tarih));
+  list.innerHTML = sorted.map((g, i) => {
+    const orig = _kapaliGunler.indexOf(g);
+    const [y,m,d] = g.tarih.split('-');
+    const tarihTR = `${d}.${m}.${y}`;
+    const renk = tipRenk[g.tip] || '#888';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:#fff">
+      <div>
+        <span style="font-weight:700;font-size:15px">${tarihTR}</span>
+        <span style="margin-left:10px;background:${renk};color:#fff;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px">${tipAd[g.tip]||g.tip}</span>
+        ${g.not ? `<span style="margin-left:8px;font-size:12px;color:var(--muted)">${g.not}</span>` : ''}
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removeKapaliGun(${_kapaliGunler.indexOf(g)})">🗑 Kaldır</button>
+    </div>`;
+  }).join('');
+}
+
+async function addKapaliGun() {
+  const tarih = document.getElementById('kp-tarih').value;
+  const tip   = document.getElementById('kp-tip').value;
+  const not   = document.getElementById('kp-not').value.trim();
+  if (!tarih) { showToast('⚠️ Lütfen tarih seçin'); return; }
+  if (_kapaliGunler.find(g => g.tarih === tarih && g.tip === tip)) {
+    showToast('⚠️ Bu tarih zaten listede'); return;
+  }
+  _kapaliGunler.push({ tarih, tip, not });
+  await saveKapaliGunler();
+  document.getElementById('kp-tarih').value = '';
+  document.getElementById('kp-not').value = '';
+}
+
+async function removeKapaliGun(idx) {
+  if (!confirm('Bu kapalı günü kaldırmak istiyor musunuz?')) return;
+  _kapaliGunler.splice(idx, 1);
+  await saveKapaliGunler();
+}
+
+async function saveKapaliGunler() {
+  try {
+    const { error } = await _supabase.from('ayarlar').update({ kapali_gunler: _kapaliGunler }).eq('id', 1);
+    if (error) throw error;
+    renderKapaliGunler();
+    showToast('✅ Kapalı günler güncellendi');
   } catch(e) {
     showToast('❌ Kayıt hatası: ' + e.message);
   }

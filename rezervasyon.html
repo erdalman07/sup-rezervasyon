@@ -1431,6 +1431,7 @@ const CONFIG = {
   KIRALAMA_SEFER2_BAS: '07:00',
   KIRALAMA_SEFER2_BIT: '09:00',
   KIRALAMA_OZEL_SAAT: true,
+  KAPALI_GUNLER: [],
 };
 
 // ============================================
@@ -1530,6 +1531,7 @@ async function loadConfig() {
       if (data.kiralama_sefer2_baslangic) CONFIG.KIRALAMA_SEFER2_BAS = data.kiralama_sefer2_baslangic;
       if (data.kiralama_sefer2_bitis)     CONFIG.KIRALAMA_SEFER2_BIT = data.kiralama_sefer2_bitis;
       if (data.kiralama_ozel_saat !== undefined) CONFIG.KIRALAMA_OZEL_SAAT = data.kiralama_ozel_saat;
+      if (Array.isArray(data.kapali_gunler))    CONFIG.KAPALI_GUNLER = data.kapali_gunler;
     }
   } catch(e) {
     console.warn('Supabase ayarlar yüklenemedi, varsayılanlar kullanılıyor:', e.message);
@@ -1583,6 +1585,15 @@ function validateStep(n) {
   }
   if (n === 2) {
     if (!booking.date) { showToast(currentLang === 'tr' ? 'Lütfen tarih seçin' : 'Please select a date'); return false; }
+    const _kd = booking.date;
+    const _iso = `${_kd.getFullYear()}-${String(_kd.getMonth()+1).padStart(2,'0')}-${String(_kd.getDate()).padStart(2,'0')}`;
+    const _kapali = (CONFIG.KAPALI_GUNLER||[]).some(g =>
+      g.tarih === _iso &&
+      (g.tip === 'hepsi' ||
+       (g.tip === 'etkinlik' && booking.activityType === 'event') ||
+       (g.tip === 'kiralama' && booking.activityType === 'rental'))
+    );
+    if (_kapali) { showToast(currentLang==='tr' ? '🚫 Bu tarih rezervasyona kapalıdır' : '🚫 This date is not available'); return false; }
     if (booking.activityType === 'event' && !booking.session) {
       showToast(currentLang === 'tr' ? 'Lütfen seans seçin' : 'Please select a session'); return false;
     }
@@ -1689,8 +1700,17 @@ function renderCalendar() {
     el.textContent = d;
     const isToday = date.getTime() === now.getTime();
     const isPast = date < now;
-    if (isPast) { el.classList.add('disabled'); }
-    else {
+    const dateISO = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isKapali = (CONFIG.KAPALI_GUNLER || []).some(g =>
+      g.tarih === dateISO &&
+      (g.tip === 'hepsi' ||
+       (g.tip === 'etkinlik' && booking.activityType === 'event') ||
+       (g.tip === 'kiralama' && booking.activityType === 'rental'))
+    );
+    if (isPast || isKapali) {
+      el.classList.add('disabled');
+      if (isKapali) { el.style.background='#fff0f0'; el.style.color='#fca5a5'; el.title='Bu tarih rezervasyona kapalıdır'; }
+    } else {
       if (isToday) el.classList.add('today');
       if (booking.date && booking.date.getTime() === date.getTime()) el.classList.add('selected');
       el.onclick = () => selectDate(new Date(y, m, d));
