@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SUP Antalya — Yakında</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0077b6 0%, #023e8a 100%);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #fff;
+      text-align: center;
+      padding: 24px;
+    }
+    .wave {
+      font-size: 56px;
+      margin-bottom: 24px;
+      animation: bob 3s ease-in-out infinite;
+    }
+    @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+    h1 { font-size: clamp(28px, 6vw, 48px); font-weight: 800; letter-spacing: -1px; margin-bottom: 12px; }
+    p { font-size: clamp(15px, 3vw, 20px); opacity: 0.85; max-width: 480px; line-height: 1.6; margin-bottom: 36px; }
+    .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      backdrop-filter: blur(8px);
+      border-radius: 50px;
+      padding: 10px 28px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 48px;
+    }
+    .contact {
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    .contact a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      opacity: 1;
+    }
+    .contact a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wave">🏄</div>
+  <h1>SUP Antalya</h1>
+  <p>Sitemiz şu an bakım modunda. Çok yakında yeni yüzüyle geri dönüyoruz.</p>
+  <div class="badge">🔧 Bakım Çalışması</div>
+  <div class="contact">
+    Rezervasyon için:
+    <a href="https://wa.me/905378653872" target="_blank">WhatsApp ile ulaşın →</a>
+  </div>
+</body>
+</html>
